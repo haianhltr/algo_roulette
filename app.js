@@ -238,13 +238,21 @@ class CaseOpener {
         // Ease-out cubic
         const easedProgress = 1 - Math.pow(1 - progress, 3);
         
-        // Calculate scroll position
+        // Calculate scroll position - center the selected card
         const cardWidth = 200;
         const cardSpacing = 10;
-        const centerLineX = window.innerWidth / 2;
+        const scrollArea = document.getElementById('scrollArea');
+        const scrollAreaRect = scrollArea.getBoundingClientRect();
+        const scrollAreaWidth = scrollAreaRect.width;
+        const scrollAreaCenter = scrollAreaWidth / 2;
+        
         const insertPos = 50;
         const cardLeftPos = insertPos * (cardWidth + cardSpacing);
-        const targetPosition = cardLeftPos + cardWidth / 2 - centerLineX;
+        // Target: card center should be at scroll area center
+        // card center = cardLeftPos - scrollPosition + cardWidth/2
+        // We want: card center = scrollAreaCenter
+        // So: scrollPosition = cardLeftPos + cardWidth/2 - scrollAreaCenter
+        const targetPosition = cardLeftPos + cardWidth / 2 - scrollAreaCenter;
         const startPos = -cardWidth * 2;
         const totalDistance = targetPosition - startPos;
         const scrollPosition = startPos + (totalDistance * easedProgress);
@@ -276,16 +284,23 @@ class CaseOpener {
     
     renderCards(scrollPosition, isAnimating) {
         const container = document.getElementById('scrollContainer');
+        const scrollArea = document.getElementById('scrollArea');
         container.innerHTML = '';
         
         const cardWidth = 200;
         const cardSpacing = 10;
-        const centerLineX = window.innerWidth / 2;
+        const scrollAreaRect = scrollArea.getBoundingClientRect();
+        const scrollAreaWidth = scrollAreaRect.width;
+        const scrollAreaCenter = scrollAreaWidth / 2;
         
         this.fakeItems.forEach((item, i) => {
-            const x = i * (cardWidth + cardSpacing) - scrollPosition;
+            // Calculate card position relative to scroll container (0,0 at top-left of container)
+            const cardLeftInList = i * (cardWidth + cardSpacing);
+            const x = cardLeftInList - scrollPosition;
             const cardCenter = x + cardWidth / 2;
-            const isVisible = cardCenter > -cardWidth && cardCenter < window.innerWidth + cardWidth;
+            
+            // Check if card is visible (center should be within reasonable bounds)
+            const isVisible = cardCenter > -cardWidth && cardCenter < scrollAreaWidth + cardWidth;
             
             if (isVisible) {
                 const isSelected = item.problem === this.selectedProblem && item.tier === this.selectedTier;
