@@ -194,10 +194,15 @@ class CaseOpener {
         document.getElementById('caseArea').style.display = 'none';
         document.getElementById('scrollArea').style.display = 'block';
         
-        // Generate fake items
+        // Generate fake items (make sure selected item is NOT in fake items)
         this.generateFakeItems(100);
         
-        // Insert selected item at position 50
+        // Remove selected item from fakeItems if it exists (to avoid duplicates)
+        this.fakeItems = this.fakeItems.filter(item => 
+            !(item.problem === this.selectedProblem && item.tier === this.selectedTier)
+        );
+        
+        // Insert selected item at position 50 (middle)
         this.fakeItems.splice(50, 0, { problem: this.selectedProblem, tier: this.selectedTier });
         
         // Start animation
@@ -249,13 +254,21 @@ class CaseOpener {
         const insertPos = 50;
         const cardLeftPos = insertPos * (cardWidth + cardSpacing);
         // Target: card center should be at scroll area center
-        // card center = cardLeftPos - scrollPosition + cardWidth/2
-        // We want: card center = scrollAreaCenter
-        // So: scrollPosition = cardLeftPos + cardWidth/2 - scrollAreaCenter
+        // When scrollPosition = targetPosition, the card at insertPos should be centered
+        // Card's left edge in container = cardLeftPos - scrollPosition
+        // Card's center in container = cardLeftPos - scrollPosition + cardWidth/2
+        // We want card center = scrollAreaCenter
+        // So: cardLeftPos - scrollPosition + cardWidth/2 = scrollAreaCenter
+        // Therefore: scrollPosition = cardLeftPos + cardWidth/2 - scrollAreaCenter
         const targetPosition = cardLeftPos + cardWidth / 2 - scrollAreaCenter;
         const startPos = -cardWidth * 2;
         const totalDistance = targetPosition - startPos;
         const scrollPosition = startPos + (totalDistance * easedProgress);
+        
+        // Store target position for final render
+        if (progress >= 1.0) {
+            this.finalScrollPosition = targetPosition;
+        }
         
         // Play spinning sound
         const speedFactor = Math.max(0.1, 1.0 - progress * 0.9);
@@ -271,12 +284,21 @@ class CaseOpener {
         if (progress < 1.0) {
             requestAnimationFrame(() => this.animateScroll());
         } else {
-            // Animation complete
+            // Animation complete - ensure we're at exact target
             this.playStop();
-            this.renderCards(targetPosition, false);
+            const finalPosition = cardLeftPos + cardWidth / 2 - scrollAreaCenter;
+            this.renderCards(finalPosition, false);
             
-            // Hold for 0.5 seconds
+            // Verify the selected card is centered
             setTimeout(() => {
+                const selectedCard = document.querySelector('.item-card.selected');
+                if (selectedCard) {
+                    const cardRect = selectedCard.getBoundingClientRect();
+                    const scrollAreaRect = scrollArea.getBoundingClientRect();
+                    const cardCenter = cardRect.left + cardRect.width / 2;
+                    const areaCenter = scrollAreaRect.left + scrollAreaRect.width / 2;
+                    console.log(`Card center: ${cardCenter}, Area center: ${areaCenter}, Diff: ${Math.abs(cardCenter - areaCenter)}`);
+                }
                 this.revealItem();
             }, 500);
         }
@@ -303,11 +325,17 @@ class CaseOpener {
             const isVisible = cardCenter > -cardWidth && cardCenter < scrollAreaWidth + cardWidth;
             
             if (isVisible) {
-                const isSelected = item.problem === this.selectedProblem && item.tier === this.selectedTier;
+                // Check if this is the selected card (must match both problem AND tier)
+                const isSelected = (item.problem === this.selectedProblem && item.tier === this.selectedTier);
                 const card = document.createElement('div');
                 card.className = `item-card ${TIER_CLASSES[item.tier]} ${isSelected ? 'selected' : isAnimating ? 'dimmed' : ''}`;
                 card.style.left = `${x}px`;
                 card.style.position = 'absolute';
+                
+                // Debug: log if we found the selected card
+                if (isSelected) {
+                    console.log(`Selected card at index ${i}, position x=${x}, center=${cardCenter}, scrollAreaCenter=${scrollAreaCenter}`);
+                }
                 
                 const problemText = document.createElement('div');
                 problemText.className = 'problem-text';
