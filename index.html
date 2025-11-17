@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeetCode Case Opener</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">LeetCode Case Opener</h1>
+        
+        <!-- Case Display Area -->
+        <div id="caseArea" class="case-area">
+            <div id="caseBox" class="case-box">
+                <div class="case-icon">📦</div>
+                <div class="case-text">CASE</div>
+            </div>
+        </div>
+        
+        <!-- Scrolling Loot Bar (hidden initially) -->
+        <div id="scrollArea" class="scroll-area" style="display: none;">
+            <div class="center-line"></div>
+            <div id="scrollContainer" class="scroll-container"></div>
+        </div>
+        
+        <!-- Problem Reveal Area -->
+        <div id="revealArea" class="reveal-area" style="display: none;">
+            <div id="problemLabel" class="problem-label"></div>
+            <div id="tierLabel" class="tier-label"></div>
+        </div>
+        
+        <!-- Open Button -->
+        <button id="openButton" class="open-button">OPEN CASE</button>
+        
+        <!-- Problem Count -->
+        <div class="problem-count">Problems in collection: <span id="problemCount">0</span></div>
+        
+        <!-- File Input for learned.txt -->
+        <div class="file-input-container">
+            <label for="fileInput" class="file-label">Load problems from learned.txt:</label>
+            <input type="file" id="fileInput" accept=".txt" />
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
+

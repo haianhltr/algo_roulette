@@ -1,0 +1,272 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: #0d1117;
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    width: 100%;
+    text-align: center;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+/* Case Area */
+.case-area {
+    margin: 20px 0;
+    min-height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.case-box {
+    width: 200px;
+    height: 200px;
+    background: #2a2a2a;
+    border: 4px solid #4B69FF;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.case-icon {
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+
+.case-text {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Scroll Area */
+.scroll-area {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    margin: 20px 0;
+    overflow: hidden;
+    background: #0d1117;
+    border: 2px solid #4B69FF;
+    border-radius: 8px;
+}
+
+.center-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #ffffff;
+    z-index: 10;
+    transform: translateX(-50%);
+    opacity: 0.8;
+}
+
+.scroll-container {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.item-card {
+    min-width: 200px;
+    height: 180px;
+    margin: 0 5px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.item-card.selected {
+    border: 4px solid #ffffff;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.item-card.dimmed {
+    opacity: 0.6;
+}
+
+.problem-text {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    max-width: 180px;
+}
+
+.tier-text {
+    font-size: 12px;
+    color: #ffffff;
+}
+
+/* Tier Colors */
+.tier-blue {
+    background: #4B69FF;
+}
+
+.tier-purple {
+    background: #8847FF;
+}
+
+.tier-pink {
+    background: #D32CE6;
+}
+
+.tier-red {
+    background: #EB4B4B;
+}
+
+.tier-gold {
+    background: #FFD700;
+}
+
+/* Reveal Area */
+.reveal-area {
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.problem-label {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
+
+.tier-label {
+    font-size: 16px;
+}
+
+/* Open Button */
+.open-button {
+    background: #4B69FF;
+    color: #ffffff;
+    border: none;
+    padding: 18px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 20px 0;
+    transition: background 0.3s;
+}
+
+.open-button:hover:not(:disabled) {
+    background: #3A59EF;
+}
+
+.open-button:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.problem-count {
+    font-size: 11px;
+    color: #8b949e;
+    margin: 10px 0;
+}
+
+/* File Input */
+.file-input-container {
+    margin: 20px 0;
+    padding: 15px;
+    background: #161b22;
+    border-radius: 8px;
+}
+
+.file-label {
+    display: block;
+    margin-bottom: 10px;
+    color: #ffffff;
+    font-size: 14px;
+}
+
+#fileInput {
+    color: #ffffff;
+    padding: 8px;
+    border: 1px solid #4B69FF;
+    border-radius: 4px;
+    background: #0d1117;
+    cursor: pointer;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .title {
+        font-size: 1.5rem;
+    }
+    
+    .case-box {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .case-icon {
+        font-size: 40px;
+    }
+    
+    .item-card {
+        min-width: 150px;
+        height: 140px;
+    }
+    
+    .problem-label {
+        font-size: 18px;
+    }
+    
+    .open-button {
+        padding: 15px 30px;
+        font-size: 16px;
+    }
+}
+
+/* Gold Flash Animation */
+@keyframes goldFlash {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.8; }
+}
+
+.gold-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #FFD700;
+    z-index: 1000;
+    animation: goldFlash 0.16s;
+    pointer-events: none;
+}
+
