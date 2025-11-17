@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Test - LeetCode Case Opener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #0d1117;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #ffffff;
+        }
+
+        .sound-category {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #161b22;
+            border-radius: 8px;
+        }
+
+        .category-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #4B69FF;
+        }
+
+        .sound-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .sound-button {
+            padding: 15px;
+            background: #2a2a2a;
+            border: 2px solid #4B69FF;
+            border-radius: 8px;
+            color: #ffffff;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .sound-button:hover {
+            background: #3a3a3a;
+            border-color: #5B79FF;
+        }
+
+        .sound-button:active {
+            transform: scale(0.95);
+        }
+
+        .sound-label {
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .sound-desc {
+            font-size: 11px;
+            color: #8b949e;
+        }
+
+        .selected {
+            background: #4B69FF;
+            border-color: #ffffff;
+        }
+
+        .selection-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: #161b22;
+            border-radius: 8px;
+        }
+
+        .copy-button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #4B69FF;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .copy-button:hover {
+            background: #3A59EF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Sound Test - Choose Your Sounds</h1>
+
+        <!-- Case Open Sounds -->
+        <div class="sound-category">
+            <div class="category-title">1. Case Opening Sound</div>
+            <div class="sound-grid" id="caseOpenGrid"></div>
+        </div>
+
+        <!-- Spinning Sounds -->
+        <div class="sound-category">
+            <div class="category-title">2. Spinning Sound</div>
+            <div class="sound-grid" id="spinGrid"></div>
+        </div>
+
+        <!-- Stop Sounds -->
+        <div class="sound-category">
+            <div class="category-title">3. Stop Sound</div>
+            <div class="sound-grid" id="stopGrid"></div>
+        </div>
+
+        <!-- Gold Reveal Sounds -->
+        <div class="sound-category">
+            <div class="category-title">4. Gold Reveal Sound</div>
+            <div class="sound-grid" id="goldGrid"></div>
+        </div>
+
+        <div class="selection-info">
+            <h2>Your Selections:</h2>
+            <div id="selections"></div>
+            <button class="copy-button" onclick="copySelections()">Copy Configuration</button>
+        </div>
+    </div>
+
+    <script src="sound-test.js"></script>
+</body>
+</html>
+
