@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge k Sorted Lists Visualizer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        #root {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function MergeKListsVisualizer() {
+            const [lists, setLists] = useState([[1,4,5], [1,3,4], [2,6]]);
+            const [algorithm, setAlgorithm] = useState('minheap');
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentStep, setCurrentStep] = useState(0);
+            const [steps, setSteps] = useState([]);
+            const [speed, setSpeed] = useState(1000);
+
+            // Generate visualization steps based on algorithm
+            const generateSteps = () => {
+                const validLists = lists.filter(list => list.length > 0);
+                if (validLists.length === 0) {
+                    setSteps([]);
+                    return;
+                }
+
+                if (algorithm === 'minheap') {
+                    generateMinHeapSteps(validLists);
+                } else if (algorithm === 'divide') {
+                    generateDivideConquerSteps(validLists);
+                } else {
+                    generateBruteForceSteps(validLists);
+                }
+            };
+
+            const generateMinHeapSteps = (validLists) => {
+                const newSteps = [];
+                const pointers = validLists.map(() => 0);
+                const result = [];
+                const heap = [];
+
+                // Initial state
+                newSteps.push({
+                    lists: validLists,
+                    pointers: [...pointers],
+                    result: [...result],
+                    heap: [...heap],
+                    description: 'Start: Initialize pointers at the beginning of each list',
+                    highlight: []
+                });
+
+                // Add first elements to heap
+                validLists.forEach((list, idx) => {
+                    if (list.length > 0) {
+                        heap.push({ value: list[0], listIdx: idx });
+                    }
+                });
+                heap.sort((a, b) => a.value - b.value);
+
+                newSteps.push({
+                    lists: validLists,
+                    pointers: [...pointers],
+                    result: [...result],
+                    heap: heap.map(h => ({...h})),
+                    description: 'Add first element from each list to min-heap',
+                    highlight: validLists.map((_, idx) => idx)
+                });
+
+                // Process heap
+                while (heap.length > 0) {
+                    const min = heap.shift();
+                    result.push(min.value);
+                    pointers[min.listIdx]++;
+
+                    newSteps.push({
+                        lists: validLists,
+                        pointers: [...pointers],
+                        result: [...result],
+                        heap: heap.map(h => ({...h})),
+                        description: `Extract min (${min.value}) from list ${min.listIdx + 1}`,
+                        highlight: [min.listIdx],
+                        extracted: min.value
+                    });
+
+                    if (pointers[min.listIdx] < validLists[min.listIdx].length) {
+                        heap.push({
+                            value: validLists[min.listIdx][pointers[min.listIdx]],
+                            listIdx: min.listIdx
+                        });
+                        heap.sort((a, b) => a.value - b.value);
+
+                        newSteps.push({
+                            lists: validLists,
+                            pointers: [...pointers],
+                            result: [...result],
+                            heap: heap.map(h => ({...h})),
+                            description: `Add next element from list ${min.listIdx + 1} to heap`,
+                            highlight: [min.listIdx]
+                        });
+                    }
+                }
+
+                newSteps.push({
+                    lists: validLists,
+                    pointers: [...pointers],
+                    result: [...result],
+                    heap: [],
+                    description: 'Complete! All lists merged.',
+                    highlight: []
+                });
+
+                setSteps(newSteps);
+            };
+
+            const generateDivideConquerSteps = (validLists) => {
+                const newSteps = [];
+                
+                newSteps.push({
+                    lists: validLists,
+                    result: [],
+                    description: 'Divide & Conquer: Pair up lists and merge them',
+                    pairs: [],
+                    level: 0
+                });
+
+                let currentLists = validLists.map(list => [...list]);
+                let level = 1;
+
+                while (currentLists.length > 1) {
+                    const pairs = [];
+                    for (let i = 0; i < currentLists.length; i += 2) {
+                        pairs.push([i, Math.min(i + 1, currentLists.length - 1)]);
+                    }
+
+                    newSteps.push({
+                        lists: currentLists,
+                        result: [],
+                        description: `Level ${level}: Pairing lists for merging`,
+                        pairs: pairs,
+                        level: level
+                    });
+
+                    const merged = [];
+                    for (let i = 0; i < currentLists.length; i += 2) {
+                        if (i + 1 < currentLists.length) {
+                            merged.push(mergeTwoLists(currentLists[i], currentLists[i + 1]));
+                        } else {
+                            merged.push(currentLists[i]);
+                        }
+                    }
+
+                    newSteps.push({
+                        lists: merged,
+                        result: [],
+                        description: `Level ${level}: After merging pairs`,
+                        pairs: [],
+                        level: level
+                    });
+
+                    currentLists = merged;
+                    level++;
+                }
+
+                newSteps.push({
+                    lists: currentLists,
+                    result: currentLists[0],
+                    description: 'Complete! Final merged list.',
+                    pairs: [],
+                    level: level
+                });
+
+                setSteps(newSteps);
+            };
+
+            const mergeTwoLists = (l1, l2) => {
+                const result = [];
+                let i = 0, j = 0;
+                while (i < l1.length && j < l2.length) {
+                    if (l1[i] <= l2[j]) {
+                        result.push(l1[i++]);
+                    } else {
+                        result.push(l2[j++]);
+                    }
+                }
+                while (i < l1.length) result.push(l1[i++]);
+                while (j < l2.length) result.push(l2[j++]);
+                return result;
+            };
+
+            const generateBruteForceSteps = (validLists) => {
+                const newSteps = [];
+                const result = [];
+
+                newSteps.push({
+                    lists: validLists,
+                    result: [],
+                    description: 'Brute Force: Compare all current elements',
+                    comparing: []
+                });
+
+                const pointers = validLists.map(() => 0);
+
+                while (true) {
+                    let minVal = Infinity;
+                    let minIdx = -1;
+                    const comparing = [];
+
+                    for (let i = 0; i < validLists.length; i++) {
+                        if (pointers[i] < validLists[i].length) {
+                            const val = validLists[i][pointers[i]];
+                            comparing.push({ listIdx: i, value: val });
+                            if (val < minVal) {
+                                minVal = val;
+                                minIdx = i;
+                            }
+                        }
+                    }
+
+                    if (minIdx === -1) break;
+
+                    newSteps.push({
+                        lists: validLists,
+                        pointers: [...pointers],
+                        result: [...result],
+                        description: `Comparing: ${comparing.map(c => c.value).join(', ')} → Min: ${minVal}`,
+                        comparing: comparing,
+                        minIdx: minIdx
+                    });
+
+                    result.push(minVal);
+                    pointers[minIdx]++;
+
+                    newSteps.push({
+                        lists: validLists,
+                        pointers: [...pointers],
+                        result: [...result],
+                        description: `Added ${minVal} to result`,
+                        comparing: [],
+                        minIdx: -1
+                    });
+                }
+
+                newSteps.push({
+                    lists: validLists,
+                    pointers: [...pointers],
+                    result: [...result],
+                    description: 'Complete!',
+                    comparing: []
+                });
+
+                setSteps(newSteps);
+            };
+
+            useEffect(() => {
+                generateSteps();
+                setCurrentStep(0);
+                setIsPlaying(false);
+            }, [lists, algorithm]);
+
+            useEffect(() => {
+                let timer;
+                if (isPlaying && currentStep < steps.length - 1) {
+                    timer = setTimeout(() => {
+                        setCurrentStep(prev => prev + 1);
+                    }, speed);
+                } else if (currentStep >= steps.length - 1) {
+                    setIsPlaying(false);
+                }
+                return () => clearTimeout(timer);
+            }, [isPlaying, currentStep, steps.length, speed]);
+
+            const handleInputChange = (e) => {
+                const text = e.target.value;
+                try {
+                    const parsed = JSON.parse(text);
+                    if (Array.isArray(parsed)) {
+                        setLists(parsed);
+                    }
+                } catch (err) {
+                    // Invalid JSON, ignore
+                }
+            };
+
+            const step = steps[currentStep] || {};
+
+            return (
+                <div style={{ background: 'white', borderRadius: '20px', padding: '30px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                    <h1 style={{ margin: '0 0 10px 0', color: '#667eea', fontSize: '32px' }}>
+                        Merge k Sorted Lists Visualizer
+                    </h1>
+                    <p style={{ color: '#666', marginBottom: '30px' }}>
+                        Visualize different algorithms for merging k sorted linked lists
+                    </p>
+
+                    {/* Controls */}
+                    <div style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Input Lists (JSON Array):
+                            </label>
+                            <input
+                                type="text"
+                                defaultValue={JSON.stringify(lists)}
+                                onBlur={handleInputChange}
+                                style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                placeholder='[[1,4,5],[1,3,4],[2,6]]'
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Algorithm:
+                            </label>
+                            <select
+                                value={algorithm}
+                                onChange={(e) => setAlgorithm(e.target.value)}
+                                style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', width: '100%' }}
+                            >
+                                <option value="minheap">Min-Heap (Optimal - O(N log k))</option>
+                                <option value="divide">Divide & Conquer (O(N log k))</option>
+                                <option value="brute">Brute Force (O(kN))</option>
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                            <button
+                                onClick={() => setIsPlaying(!isPlaying)}
+                                disabled={steps.length === 0}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#667eea',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                {isPlaying ? '⏸ Pause' : '▶ Play'}
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                                disabled={currentStep === 0}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#764ba2',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                ⏮ Previous
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                                disabled={currentStep >= steps.length - 1}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#764ba2',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Next ⏭
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(0)}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#888',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                ⟲ Reset
+                            </button>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Speed: {speed}ms
+                            </label>
+                            <input
+                                type="range"
+                                min="200"
+                                max="2000"
+                                step="200"
+                                value={speed}
+                                onChange={(e) => setSpeed(Number(e.target.value))}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '15px', fontSize: '14px' }}>
+                            Step {currentStep + 1} of {steps.length}
+                        </div>
+                    </div>
+
+                    {/* Visualization */}
+                    {step.description && (
+                        <div style={{ marginBottom: '20px', padding: '15px', background: '#e3f2fd', borderRadius: '10px', border: '2px solid #2196f3' }}>
+                            <strong style={{ color: '#1976d2' }}>{step.description}</strong>
+                        </div>
+                    )}
+
+                    {/* Input Lists */}
+                    <div style={{ marginBottom: '30px' }}>
+                        <h3 style={{ color: '#667eea', marginBottom: '15px' }}>Input Lists:</h3>
+                        {(step.lists || lists).map((list, idx) => (
+                            <div key={idx} style={{ marginBottom: '15px' }}>
+                                <div style={{ 
+                                    display: 'flex', 
+                                    gap: '10px', 
+                                    alignItems: 'center',
+                                    padding: '15px',
+                                    background: step.highlight?.includes(idx) ? '#fff3cd' : '#f8f9fa',
+                                    borderRadius: '10px',
+                                    border: step.highlight?.includes(idx) ? '2px solid #ffc107' : '1px solid #ddd',
+                                    transition: 'all 0.3s'
+                                }}>
+                                    <span style={{ fontWeight: 'bold', minWidth: '60px' }}>List {idx + 1}:</span>
+                                    {list.map((val, valIdx) => {
+                                        const isPointer = step.pointers && step.pointers[idx] === valIdx;
+                                        const isComparing = step.comparing?.some(c => c.listIdx === idx && list[c.value] === val);
+                                        const isMin = step.minIdx === idx && step.pointers && step.pointers[idx] === valIdx;
+                                        
+                                        return (
+                                            <div key={valIdx} style={{
+                                                width: '50px',
+                                                height: '50px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: isMin ? '#4caf50' : isPointer ? '#2196f3' : isComparing ? '#ff9800' : 'white',
+                                                color: (isPointer || isMin || isComparing) ? 'white' : '#333',
+                                                border: '2px solid',
+                                                borderColor: isMin ? '#388e3c' : isPointer ? '#1976d2' : isComparing ? '#f57c00' : '#ddd',
+                                                borderRadius: '8px',
+                                                fontWeight: 'bold',
+                                                fontSize: '18px',
+                                                transition: 'all 0.3s',
+                                                transform: (isPointer || isMin) ? 'scale(1.1)' : 'scale(1)',
+                                                boxShadow: (isPointer || isMin || isComparing) ? '0 4px 8px rgba(0,0,0,0.2)' : 'none'
+                                            }}>
+                                                {val}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Min-Heap visualization */}
+                    {algorithm === 'minheap' && step.heap && step.heap.length > 0 && (
+                        <div style={{ marginBottom: '30px' }}>
+                            <h3 style={{ color: '#667eea', marginBottom: '15px' }}>Min-Heap:</h3>
+                            <div style={{ 
+                                display: 'flex', 
+                                gap: '10px', 
+                                flexWrap: 'wrap',
+                                padding: '20px',
+                                background: '#f0f4ff',
+                                borderRadius: '10px',
+                                border: '2px solid #667eea'
+                            }}>
+                                {step.heap.map((item, idx) => (
+                                    <div key={idx} style={{
+                                        padding: '15px 20px',
+                                        background: idx === 0 ? '#4caf50' : 'white',
+                                        color: idx === 0 ? 'white' : '#333',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        border: idx === 0 ? '2px solid #388e3c' : '2px solid #ddd',
+                                        boxShadow: idx === 0 ? '0 4px 8px rgba(0,0,0,0.2)' : 'none'
+                                    }}>
+                                        {item.value} <span style={{ fontSize: '12px', opacity: 0.8 }}>(L{item.listIdx + 1})</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Divide & Conquer pairs */}
+                    {algorithm === 'divide' && step.pairs && step.pairs.length > 0 && (
+                        <div style={{ marginBottom: '30px' }}>
+                            <h3 style={{ color: '#667eea', marginBottom: '15px' }}>Merge Pairs:</h3>
+                            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                                {step.pairs.map((pair, idx) => (
+                                    <div key={idx} style={{
+                                        padding: '15px',
+                                        background: '#e1f5e1',
+                                        borderRadius: '8px',
+                                        border: '2px solid #4caf50'
+                                    }}>
+                                        List {pair[0] + 1} ⟷ List {pair[1] + 1}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Result */}
+                    {step.result && step.result.length > 0 && (
+                        <div>
+                            <h3 style={{ color: '#667eea', marginBottom: '15px' }}>Merged Result:</h3>
+                            <div style={{ 
+                                display: 'flex', 
+                                gap: '10px', 
+                                flexWrap: 'wrap',
+                                padding: '20px',
+                                background: '#e8f5e9',
+                                borderRadius: '10px',
+                                border: '2px solid #4caf50'
+                            }}>
+                                {step.result.map((val, idx) => (
+                                    <div key={idx} style={{
+                                        width: '50px',
+                                        height: '50px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: idx === step.result.length - 1 ? '#4caf50' : 'white',
+                                        color: idx === step.result.length - 1 ? 'white' : '#333',
+                                        border: '2px solid #4caf50',
+                                        borderRadius: '8px',
+                                        fontWeight: 'bold',
+                                        fontSize: '18px',
+                                        transform: idx === step.result.length - 1 ? 'scale(1.1)' : 'scale(1)',
+                                        transition: 'all 0.3s'
+                                    }}>
+                                        {val}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legend */}
+                    <div style={{ marginTop: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+                        <h4 style={{ marginTop: 0, color: '#667eea' }}>Legend:</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#2196f3', borderRadius: '5px' }}></div>
+                                <span>Current Pointer</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#4caf50', borderRadius: '5px' }}></div>
+                                <span>Minimum/Selected</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#ff9800', borderRadius: '5px' }}></div>
+                                <span>Comparing</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#fff3cd', border: '2px solid #ffc107', borderRadius: '5px' }}></div>
+                                <span>Active List</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<MergeKListsVisualizer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
