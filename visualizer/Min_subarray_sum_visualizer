@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimum Size Subarray Sum Visualizer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+        }
+        #root {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function MinSubarraySumVisualizer() {
+            const [nums, setNums] = useState([2,3,1,2,4,3]);
+            const [target, setTarget] = useState(7);
+            const [algorithm, setAlgorithm] = useState('sliding');
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentStep, setCurrentStep] = useState(0);
+            const [steps, setSteps] = useState([]);
+            const [speed, setSpeed] = useState(1000);
+
+            // Generate visualization steps
+            const generateSteps = () => {
+                if (algorithm === 'sliding') {
+                    generateSlidingWindowSteps();
+                } else {
+                    generateBruteForceSteps();
+                }
+            };
+
+            const generateSlidingWindowSteps = () => {
+                const newSteps = [];
+                let left = 0;
+                let currentSum = 0;
+                let minLength = Infinity;
+                let minStart = -1;
+                let minEnd = -1;
+
+                // Initial state
+                newSteps.push({
+                    left: 0,
+                    right: -1,
+                    currentSum: 0,
+                    minLength: Infinity,
+                    minStart: -1,
+                    minEnd: -1,
+                    description: `Start: target = ${target}, initialize left = 0, right = -1, sum = 0`,
+                    action: 'init'
+                });
+
+                for (let right = 0; right < nums.length; right++) {
+                    // Expand window
+                    currentSum += nums[right];
+                    
+                    newSteps.push({
+                        left: left,
+                        right: right,
+                        currentSum: currentSum,
+                        minLength: minLength,
+                        minStart: minStart,
+                        minEnd: minEnd,
+                        description: `Expand: Add nums[${right}] = ${nums[right]} to window. Sum = ${currentSum}`,
+                        action: 'expand',
+                        highlight: right
+                    });
+
+                    // Shrink window while sum >= target
+                    while (currentSum >= target) {
+                        const currentLength = right - left + 1;
+                        
+                        if (currentLength < minLength) {
+                            minLength = currentLength;
+                            minStart = left;
+                            minEnd = right;
+                            
+                            newSteps.push({
+                                left: left,
+                                right: right,
+                                currentSum: currentSum,
+                                minLength: minLength,
+                                minStart: minStart,
+                                minEnd: minEnd,
+                                description: `✓ Found valid subarray! Length = ${currentLength}. New minimum!`,
+                                action: 'found',
+                                highlight: -1
+                            });
+                        }
+
+                        // Shrink from left
+                        newSteps.push({
+                            left: left,
+                            right: right,
+                            currentSum: currentSum,
+                            minLength: minLength,
+                            minStart: minStart,
+                            minEnd: minEnd,
+                            description: `Shrink: Remove nums[${left}] = ${nums[left]} from window`,
+                            action: 'shrink',
+                            highlight: left
+                        });
+
+                        currentSum -= nums[left];
+                        left++;
+
+                        newSteps.push({
+                            left: left,
+                            right: right,
+                            currentSum: currentSum,
+                            minLength: minLength,
+                            minStart: minStart,
+                            minEnd: minEnd,
+                            description: `After shrink: left = ${left}, sum = ${currentSum}`,
+                            action: 'after_shrink',
+                            highlight: -1
+                        });
+                    }
+                }
+
+                // Final state
+                const result = minLength === Infinity ? 0 : minLength;
+                newSteps.push({
+                    left: left,
+                    right: nums.length - 1,
+                    currentSum: currentSum,
+                    minLength: minLength,
+                    minStart: minStart,
+                    minEnd: minEnd,
+                    description: `Complete! Minimum length = ${result}`,
+                    action: 'complete',
+                    highlight: -1
+                });
+
+                setSteps(newSteps);
+            };
+
+            const generateBruteForceSteps = () => {
+                const newSteps = [];
+                let minLength = Infinity;
+                let minStart = -1;
+                let minEnd = -1;
+
+                newSteps.push({
+                    left: -1,
+                    right: -1,
+                    currentSum: 0,
+                    minLength: Infinity,
+                    minStart: -1,
+                    minEnd: -1,
+                    description: `Brute Force: Check all possible subarrays`,
+                    action: 'init'
+                });
+
+                for (let i = 0; i < nums.length; i++) {
+                    let currentSum = 0;
+                    
+                    for (let j = i; j < nums.length; j++) {
+                        currentSum += nums[j];
+
+                        newSteps.push({
+                            left: i,
+                            right: j,
+                            currentSum: currentSum,
+                            minLength: minLength,
+                            minStart: minStart,
+                            minEnd: minEnd,
+                            description: `Check subarray [${i}, ${j}]: sum = ${currentSum}`,
+                            action: currentSum >= target ? 'checking_valid' : 'checking',
+                            highlight: j
+                        });
+
+                        if (currentSum >= target) {
+                            const currentLength = j - i + 1;
+                            if (currentLength < minLength) {
+                                minLength = currentLength;
+                                minStart = i;
+                                minEnd = j;
+
+                                newSteps.push({
+                                    left: i,
+                                    right: j,
+                                    currentSum: currentSum,
+                                    minLength: minLength,
+                                    minStart: minStart,
+                                    minEnd: minEnd,
+                                    description: `✓ New minimum found! Length = ${currentLength}`,
+                                    action: 'found',
+                                    highlight: -1
+                                });
+                            }
+                            break; // No need to extend further from this start
+                        }
+                    }
+                }
+
+                const result = minLength === Infinity ? 0 : minLength;
+                newSteps.push({
+                    left: -1,
+                    right: -1,
+                    currentSum: 0,
+                    minLength: minLength,
+                    minStart: minStart,
+                    minEnd: minEnd,
+                    description: `Complete! Minimum length = ${result}`,
+                    action: 'complete',
+                    highlight: -1
+                });
+
+                setSteps(newSteps);
+            };
+
+            useEffect(() => {
+                generateSteps();
+                setCurrentStep(0);
+                setIsPlaying(false);
+            }, [nums, target, algorithm]);
+
+            useEffect(() => {
+                let timer;
+                if (isPlaying && currentStep < steps.length - 1) {
+                    timer = setTimeout(() => {
+                        setCurrentStep(prev => prev + 1);
+                    }, speed);
+                } else if (currentStep >= steps.length - 1) {
+                    setIsPlaying(false);
+                }
+                return () => clearTimeout(timer);
+            }, [isPlaying, currentStep, steps.length, speed]);
+
+            const handleNumsChange = (e) => {
+                const text = e.target.value;
+                try {
+                    const parsed = JSON.parse(text);
+                    if (Array.isArray(parsed) && parsed.every(n => typeof n === 'number')) {
+                        setNums(parsed);
+                    }
+                } catch (err) {
+                    // Invalid input
+                }
+            };
+
+            const step = steps[currentStep] || {
+                left: -1,
+                right: -1,
+                currentSum: 0,
+                minLength: Infinity,
+                minStart: -1,
+                minEnd: -1,
+                description: '',
+                action: 'init'
+            };
+
+            const getBarColor = (index) => {
+                const { left, right, minStart, minEnd, action, highlight } = step;
+                
+                if (highlight === index && (action === 'expand' || action === 'shrink')) {
+                    return action === 'expand' ? '#4caf50' : '#f44336';
+                }
+                
+                if (minStart !== -1 && index >= minStart && index <= minEnd && action === 'complete') {
+                    return '#ffd700'; // Gold for final answer
+                }
+                
+                if (left !== -1 && right !== -1 && index >= left && index <= right) {
+                    if (step.currentSum >= target) {
+                        return '#66bb6a'; // Light green for valid window
+                    }
+                    return '#42a5f5'; // Blue for current window
+                }
+                
+                return '#e0e0e0'; // Gray for inactive
+            };
+
+            const getBarBorder = (index) => {
+                const { left, right, minStart, minEnd, action } = step;
+                
+                if (action === 'complete' && minStart !== -1 && index >= minStart && index <= minEnd) {
+                    return '3px solid #ff9800';
+                }
+                
+                if (index === left || index === right) {
+                    return '3px solid #1976d2';
+                }
+                
+                return '1px solid #bdbdbd';
+            };
+
+            return (
+                <div style={{ background: 'white', borderRadius: '20px', padding: '30px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                    <h1 style={{ margin: '0 0 10px 0', color: '#11998e', fontSize: '32px' }}>
+                        Minimum Size Subarray Sum
+                    </h1>
+                    <p style={{ color: '#666', marginBottom: '30px' }}>
+                        Find the minimal length subarray with sum ≥ target using sliding window
+                    </p>
+
+                    {/* Controls */}
+                    <div style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                    Array (JSON):
+                                </label>
+                                <input
+                                    type="text"
+                                    defaultValue={JSON.stringify(nums)}
+                                    onBlur={handleNumsChange}
+                                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                    placeholder='[2,3,1,2,4,3]'
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                    Target:
+                                </label>
+                                <input
+                                    type="number"
+                                    value={target}
+                                    onChange={(e) => setTarget(Number(e.target.value))}
+                                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Algorithm:
+                            </label>
+                            <select
+                                value={algorithm}
+                                onChange={(e) => setAlgorithm(e.target.value)}
+                                style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', width: '100%' }}
+                            >
+                                <option value="sliding">Sliding Window - O(n) ⚡ Optimal</option>
+                                <option value="brute">Brute Force - O(n²) 🐌 Slow</option>
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                            <button
+                                onClick={() => setIsPlaying(!isPlaying)}
+                                disabled={steps.length === 0}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#11998e',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    flex: '1',
+                                    minWidth: '120px'
+                                }}
+                            >
+                                {isPlaying ? '⏸ Pause' : '▶ Play'}
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                                disabled={currentStep === 0}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#38ef7d',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    flex: '1',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                ⏮ Prev
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                                disabled={currentStep >= steps.length - 1}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#38ef7d',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    flex: '1',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                Next ⏭
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(0)}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#888',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    flex: '1',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                ⟲ Reset
+                            </button>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Speed: {speed}ms
+                            </label>
+                            <input
+                                type="range"
+                                min="200"
+                                max="2000"
+                                step="200"
+                                value={speed}
+                                onChange={(e) => setSpeed(Number(e.target.value))}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
+                            Step {currentStep + 1} of {steps.length}
+                        </div>
+                    </div>
+
+                    {/* Status Display */}
+                    <div style={{ 
+                        marginBottom: '20px', 
+                        padding: '15px', 
+                        background: step.action === 'found' ? '#c8e6c9' : step.action === 'complete' ? '#fff9c4' : '#e3f2fd', 
+                        borderRadius: '10px', 
+                        border: `2px solid ${step.action === 'found' ? '#4caf50' : step.action === 'complete' ? '#ffc107' : '#2196f3'}`,
+                        transition: 'all 0.3s'
+                    }}>
+                        <div style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: '10px', fontSize: '16px' }}>
+                            {step.description}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '14px' }}>
+                            <div>
+                                <strong>Left:</strong> {step.left === -1 ? 'N/A' : step.left}
+                            </div>
+                            <div>
+                                <strong>Right:</strong> {step.right === -1 ? 'N/A' : step.right}
+                            </div>
+                            <div>
+                                <strong>Current Sum:</strong> {step.currentSum}
+                            </div>
+                            <div>
+                                <strong>Window Size:</strong> {step.left !== -1 && step.right !== -1 ? step.right - step.left + 1 : 0}
+                            </div>
+                            <div>
+                                <strong>Min Length:</strong> {step.minLength === Infinity ? '∞' : step.minLength}
+                            </div>
+                            <div>
+                                <strong>Sum ≥ Target:</strong> {step.currentSum >= target ? '✓ Yes' : '✗ No'}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Array Visualization */}
+                    <div style={{ marginBottom: '30px' }}>
+                        <h3 style={{ color: '#11998e', marginBottom: '15px' }}>Array Visualization:</h3>
+                        <div style={{ position: 'relative' }}>
+                            {/* Pointer labels */}
+                            {step.left !== -1 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    left: `${(step.left / nums.length) * 100}%`,
+                                    top: '-30px',
+                                    transform: 'translateX(-50%)',
+                                    fontWeight: 'bold',
+                                    color: '#1976d2',
+                                    fontSize: '14px'
+                                }}>
+                                    ← LEFT
+                                </div>
+                            )}
+                            {step.right !== -1 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    left: `${((step.right + 0.5) / nums.length) * 100}%`,
+                                    top: '-30px',
+                                    transform: 'translateX(-50%)',
+                                    fontWeight: 'bold',
+                                    color: '#1976d2',
+                                    fontSize: '14px'
+                                }}>
+                                    RIGHT →
+                                </div>
+                            )}
+                            
+                            <div style={{ 
+                                display: 'flex', 
+                                gap: '8px', 
+                                alignItems: 'flex-end',
+                                padding: '40px 20px 20px',
+                                background: '#f8f9fa',
+                                borderRadius: '10px',
+                                minHeight: '300px'
+                            }}>
+                                {nums.map((num, idx) => {
+                                    const maxNum = Math.max(...nums);
+                                    const height = (num / maxNum) * 200 + 50;
+                                    const color = getBarColor(idx);
+                                    const border = getBarBorder(idx);
+                                    
+                                    return (
+                                        <div key={idx} style={{ 
+                                            flex: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <div style={{
+                                                width: '100%',
+                                                minWidth: '40px',
+                                                height: `${height}px`,
+                                                background: color,
+                                                border: border,
+                                                borderRadius: '8px 8px 0 0',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: 'bold',
+                                                fontSize: '18px',
+                                                color: color === '#e0e0e0' ? '#666' : 'white',
+                                                transition: 'all 0.3s',
+                                                boxShadow: idx >= step.left && idx <= step.right && step.left !== -1 ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
+                                                transform: step.highlight === idx ? 'scale(1.05)' : 'scale(1)'
+                                            }}>
+                                                {num}
+                                            </div>
+                                            <div style={{ 
+                                                fontSize: '12px', 
+                                                color: '#666',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                [{idx}]
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Best Answer Display */}
+                    {step.minStart !== -1 && (
+                        <div style={{ 
+                            marginBottom: '30px',
+                            padding: '20px',
+                            background: 'linear-gradient(135deg, #fff9c4 0%, #ffe082 100%)',
+                            borderRadius: '10px',
+                            border: '3px solid #ffc107'
+                        }}>
+                            <h3 style={{ color: '#f57f17', marginTop: 0 }}>
+                                🏆 Current Best Subarray:
+                            </h3>
+                            <div style={{ fontSize: '18px', marginBottom: '10px' }}>
+                                <strong>Subarray:</strong> [{nums.slice(step.minStart, step.minEnd + 1).join(', ')}]
+                            </div>
+                            <div style={{ fontSize: '16px' }}>
+                                <strong>Indices:</strong> [{step.minStart}, {step.minEnd}] | 
+                                <strong> Length:</strong> {step.minLength} | 
+                                <strong> Sum:</strong> {nums.slice(step.minStart, step.minEnd + 1).reduce((a, b) => a + b, 0)}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legend */}
+                    <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+                        <h4 style={{ marginTop: 0, color: '#11998e' }}>Legend:</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#42a5f5', borderRadius: '5px', border: '1px solid #1976d2' }}></div>
+                                <span>Current Window (sum &lt; target)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#66bb6a', borderRadius: '5px', border: '1px solid #388e3c' }}></div>
+                                <span>Valid Window (sum ≥ target)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#ffd700', borderRadius: '5px', border: '3px solid #ff9800' }}></div>
+                                <span>Best Answer (final)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#4caf50', borderRadius: '5px' }}></div>
+                                <span>Expanding (adding element)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#f44336', borderRadius: '5px' }}></div>
+                                <span>Shrinking (removing element)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#e0e0e0', borderRadius: '5px', border: '1px solid #bdbdbd' }}></div>
+                                <span>Inactive</span>
+                            </div>
+                        </div>
+                        
+                        <div style={{ marginTop: '20px', padding: '15px', background: 'white', borderRadius: '8px', border: '2px solid #11998e' }}>
+                            <h5 style={{ marginTop: 0, color: '#11998e' }}>Algorithm Explanation:</h5>
+                            {algorithm === 'sliding' ? (
+                                <ul style={{ margin: '5px 0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                                    <li><strong>Two Pointers:</strong> Left and right define the current window</li>
+                                    <li><strong>Expand:</strong> Move right pointer to add elements and increase sum</li>
+                                    <li><strong>Shrink:</strong> When sum ≥ target, move left pointer to minimize length</li>
+                                    <li><strong>Track Minimum:</strong> Keep track of the smallest valid window found</li>
+                                    <li><strong>Time Complexity:</strong> O(n) - each element visited at most twice</li>
+                                </ul>
+                            ) : (
+                                <ul style={{ margin: '5px 0', paddingLeft: '20px', lineHeight: '1.6' }}>
+                                    <li><strong>Check All Subarrays:</strong> Try every possible starting position</li>
+                                    <li><strong>Extend Window:</strong> From each start, extend until sum ≥ target</li>
+                                    <li><strong>Track Minimum:</strong> Keep the smallest valid subarray length</li>
+                                    <li><strong>Time Complexity:</strong> O(n²) - nested loops over all subarrays</li>
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<MinSubarraySumVisualizer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
