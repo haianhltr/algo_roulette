@@ -10,3 +10,5 @@
 283. Move Zeroes
 2138. Divide a String Into Groups of Size k
 124. Binary Tree Maximum Path Sum
+239. Sliding Window Maximum
+23. Merge k Sorted Lists
