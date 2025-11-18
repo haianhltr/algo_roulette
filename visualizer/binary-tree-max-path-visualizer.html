@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Tree Maximum Path Sum Visualizer</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        #root {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        class TreeNode {
+            constructor(val, left = null, right = null) {
+                this.val = val;
+                this.left = left;
+                this.right = right;
+            }
+        }
+
+        function BinaryTreeMaxPathVisualizer() {
+            const [treeInput, setTreeInput] = useState('[1,2,3]');
+            const [tree, setTree] = useState(null);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentStep, setCurrentStep] = useState(0);
+            const [steps, setSteps] = useState([]);
+            const [speed, setSpeed] = useState(1500);
+            const [preset, setPreset] = useState('example1');
+
+            const presets = {
+                'example1': { array: '[1,2,3]', description: 'Example 1: Simple path through root' },
+                'example2': { array: '[-10,9,20,null,null,15,7]', description: 'Example 2: Path avoiding negative root' },
+                'negative': { array: '[-3]', description: 'Single negative node' },
+                'mixed': { array: '[5,-3,3,null,null,null,9]', description: 'Mixed positive/negative' },
+                'complex': { array: '[2,-1,3,4,5,null,6,null,null,null,null,null,7]', description: 'Complex tree' },
+                'allNegative': { array: '[-1,-2,-3]', description: 'All negative values' }
+            };
+
+            const arrayToTree = (arr) => {
+                if (!arr || arr.length === 0) return null;
+                
+                const root = new TreeNode(arr[0]);
+                const queue = [root];
+                let i = 1;
+                
+                while (queue.length > 0 && i < arr.length) {
+                    const node = queue.shift();
+                    
+                    if (i < arr.length && arr[i] !== null) {
+                        node.left = new TreeNode(arr[i]);
+                        queue.push(node.left);
+                    }
+                    i++;
+                    
+                    if (i < arr.length && arr[i] !== null) {
+                        node.right = new TreeNode(arr[i]);
+                        queue.push(node.right);
+                    }
+                    i++;
+                }
+                
+                return root;
+            };
+
+            const generateSteps = (root) => {
+                if (!root) return [];
+                
+                const newSteps = [];
+                let globalMax = -Infinity;
+                let bestPath = [];
+
+                newSteps.push({
+                    description: 'Start: Begin traversal from leaves up to root',
+                    currentNode: null,
+                    leftMax: null,
+                    rightMax: null,
+                    localMax: null,
+                    globalMax: globalMax,
+                    visitedNodes: [],
+                    currentPath: [],
+                    bestPath: [],
+                    phase: 'init'
+                });
+
+                const dfs = (node, path = []) => {
+                    if (!node) return 0;
+
+                    // Visit this node
+                    newSteps.push({
+                        description: `Visit node ${node.val}`,
+                        currentNode: node,
+                        leftMax: null,
+                        rightMax: null,
+                        localMax: null,
+                        globalMax: globalMax,
+                        visitedNodes: [...path, node],
+                        currentPath: [],
+                        bestPath: [...bestPath],
+                        phase: 'visiting'
+                    });
+
+                    // Recursively get max path sum from left subtree
+                    const leftPath = [...path, node];
+                    const leftMax = Math.max(0, dfs(node.left, leftPath));
+                    
+                    if (node.left) {
+                        newSteps.push({
+                            description: `Left subtree of ${node.val} returns: ${leftMax}`,
+                            currentNode: node,
+                            leftMax: leftMax,
+                            rightMax: null,
+                            localMax: null,
+                            globalMax: globalMax,
+                            visitedNodes: [...path, node],
+                            currentPath: [],
+                            bestPath: [...bestPath],
+                            phase: 'left_complete'
+                        });
+                    }
+
+                    // Recursively get max path sum from right subtree
+                    const rightPath = [...path, node];
+                    const rightMax = Math.max(0, dfs(node.right, rightPath));
+                    
+                    if (node.right) {
+                        newSteps.push({
+                            description: `Right subtree of ${node.val} returns: ${rightMax}`,
+                            currentNode: node,
+                            leftMax: leftMax,
+                            rightMax: rightMax,
+                            localMax: null,
+                            globalMax: globalMax,
+                            visitedNodes: [...path, node],
+                            currentPath: [],
+                            bestPath: [...bestPath],
+                            phase: 'right_complete'
+                        });
+                    }
+
+                    // Calculate local max path sum through this node
+                    const localMax = node.val + leftMax + rightMax;
+                    
+                    // Build the current path being considered
+                    const currentPathNodes = [];
+                    if (node.left && leftMax > 0) {
+                        findPathForValue(node.left, leftMax, currentPathNodes);
+                    }
+                    currentPathNodes.push(node);
+                    if (node.right && rightMax > 0) {
+                        findPathForValue(node.right, rightMax, currentPathNodes);
+                    }
+
+                    newSteps.push({
+                        description: `Calculate path through ${node.val}: ${leftMax} + ${node.val} + ${rightMax} = ${localMax}`,
+                        currentNode: node,
+                        leftMax: leftMax,
+                        rightMax: rightMax,
+                        localMax: localMax,
+                        globalMax: globalMax,
+                        visitedNodes: [...path, node],
+                        currentPath: currentPathNodes,
+                        bestPath: [...bestPath],
+                        phase: 'calculating'
+                    });
+
+                    // Update global max if needed
+                    if (localMax > globalMax) {
+                        globalMax = localMax;
+                        bestPath = [...currentPathNodes];
+                        
+                        newSteps.push({
+                            description: `🎉 New maximum found! Path sum = ${globalMax}`,
+                            currentNode: node,
+                            leftMax: leftMax,
+                            rightMax: rightMax,
+                            localMax: localMax,
+                            globalMax: globalMax,
+                            visitedNodes: [...path, node],
+                            currentPath: currentPathNodes,
+                            bestPath: [...bestPath],
+                            phase: 'new_max'
+                        });
+                    }
+
+                    // Return max path sum going through this node (can only use one side)
+                    const returnValue = node.val + Math.max(leftMax, rightMax);
+                    
+                    newSteps.push({
+                        description: `Return from ${node.val}: max(${node.val} + ${leftMax}, ${node.val} + ${rightMax}) = ${returnValue}`,
+                        currentNode: node,
+                        leftMax: leftMax,
+                        rightMax: rightMax,
+                        localMax: localMax,
+                        globalMax: globalMax,
+                        visitedNodes: [...path, node],
+                        currentPath: [],
+                        bestPath: [...bestPath],
+                        returnValue: returnValue,
+                        phase: 'returning'
+                    });
+
+                    return returnValue;
+                };
+
+                const findPathForValue = (node, targetSum, pathNodes, currentSum = 0) => {
+                    if (!node) return false;
+                    
+                    currentSum += node.val;
+                    pathNodes.push(node);
+                    
+                    if (currentSum === targetSum) return true;
+                    
+                    if (findPathForValue(node.left, targetSum, pathNodes, currentSum)) return true;
+                    if (findPathForValue(node.right, targetSum, pathNodes, currentSum)) return true;
+                    
+                    pathNodes.pop();
+                    return false;
+                };
+
+                dfs(root);
+
+                newSteps.push({
+                    description: `✅ Complete! Maximum path sum = ${globalMax}`,
+                    currentNode: null,
+                    leftMax: null,
+                    rightMax: null,
+                    localMax: null,
+                    globalMax: globalMax,
+                    visitedNodes: [],
+                    currentPath: [],
+                    bestPath: [...bestPath],
+                    phase: 'complete'
+                });
+
+                return newSteps;
+            };
+
+            const buildTree = (input) => {
+                try {
+                    const arr = JSON.parse(input);
+                    const root = arrayToTree(arr);
+                    setTree(root);
+                    const newSteps = generateSteps(root);
+                    setSteps(newSteps);
+                    setCurrentStep(0);
+                    setIsPlaying(false);
+                } catch (err) {
+                    console.error('Invalid input:', err);
+                }
+            };
+
+            useEffect(() => {
+                buildTree(treeInput);
+            }, [treeInput]);
+
+            useEffect(() => {
+                let timer;
+                if (isPlaying && currentStep < steps.length - 1) {
+                    timer = setTimeout(() => {
+                        setCurrentStep(prev => prev + 1);
+                    }, speed);
+                } else if (currentStep >= steps.length - 1) {
+                    setIsPlaying(false);
+                }
+                return () => clearTimeout(timer);
+            }, [isPlaying, currentStep, steps.length, speed]);
+
+            const handlePresetChange = (presetKey) => {
+                setPreset(presetKey);
+                setTreeInput(presets[presetKey].array);
+            };
+
+            const getNodePositions = (node, x = 400, y = 60, level = 0, offset = 200) => {
+                if (!node) return [];
+                
+                const positions = [{ node, x, y }];
+                const newOffset = offset / 2;
+                
+                if (node.left) {
+                    positions.push(...getNodePositions(node.left, x - offset, y + 100, level + 1, newOffset));
+                }
+                if (node.right) {
+                    positions.push(...getNodePositions(node.right, x + offset, y + 100, level + 1, newOffset));
+                }
+                
+                return positions;
+            };
+
+            const step = steps[currentStep] || {
+                description: '',
+                currentNode: null,
+                leftMax: null,
+                rightMax: null,
+                localMax: null,
+                globalMax: -Infinity,
+                visitedNodes: [],
+                currentPath: [],
+                bestPath: [],
+                phase: 'init'
+            };
+
+            const positions = tree ? getNodePositions(tree) : [];
+
+            const getNodeColor = (node) => {
+                if (step.bestPath.includes(node) && step.phase === 'complete') {
+                    return '#ffd700'; // Gold for final answer
+                }
+                if (step.currentPath.includes(node)) {
+                    return '#4caf50'; // Green for current path being evaluated
+                }
+                if (step.currentNode === node) {
+                    return '#2196f3'; // Blue for current node
+                }
+                if (step.visitedNodes.includes(node)) {
+                    return '#9e9e9e'; // Gray for visited
+                }
+                return '#e0e0e0'; // Light gray for unvisited
+            };
+
+            const getNodeBorder = (node) => {
+                if (step.bestPath.includes(node) && step.phase === 'complete') {
+                    return '4px solid #ff9800';
+                }
+                if (step.currentNode === node) {
+                    return '4px solid #1976d2';
+                }
+                return '2px solid #bdbdbd';
+            };
+
+            return (
+                <div style={{ background: 'white', borderRadius: '20px', padding: '30px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+                    <h1 style={{ margin: '0 0 10px 0', color: '#667eea', fontSize: '32px' }}>
+                        Binary Tree Maximum Path Sum
+                    </h1>
+                    <p style={{ color: '#666', marginBottom: '30px' }}>
+                        Find the maximum path sum in a binary tree using recursive DFS
+                    </p>
+
+                    {/* Controls */}
+                    <div style={{ marginBottom: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Select Preset:
+                            </label>
+                            <select
+                                value={preset}
+                                onChange={(e) => handlePresetChange(e.target.value)}
+                                style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', width: '100%', marginBottom: '5px' }}
+                            >
+                                {Object.entries(presets).map(([key, value]) => (
+                                    <option key={key} value={key}>{value.description}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Tree Array (JSON - use null for empty nodes):
+                            </label>
+                            <input
+                                type="text"
+                                value={treeInput}
+                                onChange={(e) => setTreeInput(e.target.value)}
+                                style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                                placeholder='[1,2,3]'
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                            <button
+                                onClick={() => setIsPlaying(!isPlaying)}
+                                disabled={steps.length === 0}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#667eea',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold',
+                                    flex: '1',
+                                    minWidth: '120px'
+                                }}
+                            >
+                                {isPlaying ? '⏸ Pause' : '▶ Play'}
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                                disabled={currentStep === 0}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#764ba2',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    flex: '1',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                ⏮ Prev
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                                disabled={currentStep >= steps.length - 1}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#764ba2',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    flex: '1',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                Next ⏭
+                            </button>
+                            <button
+                                onClick={() => setCurrentStep(0)}
+                                style={{
+                                    padding: '10px 20px',
+                                    background: '#888',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '5px',
+                                    cursor: 'pointer',
+                                    flex: '1',
+                                    minWidth: '100px'
+                                }}
+                            >
+                                ⟲ Reset
+                            </button>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                                Speed: {speed}ms
+                            </label>
+                            <input
+                                type="range"
+                                min="500"
+                                max="3000"
+                                step="250"
+                                value={speed}
+                                onChange={(e) => setSpeed(Number(e.target.value))}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+
+                        <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
+                            Step {currentStep + 1} of {steps.length}
+                        </div>
+                    </div>
+
+                    {/* Status Display */}
+                    <div style={{ 
+                        marginBottom: '20px', 
+                        padding: '20px', 
+                        background: step.phase === 'new_max' ? '#c8e6c9' : step.phase === 'complete' ? '#fff9c4' : '#e3f2fd', 
+                        borderRadius: '10px', 
+                        border: `3px solid ${step.phase === 'new_max' ? '#4caf50' : step.phase === 'complete' ? '#ffc107' : '#2196f3'}`,
+                        transition: 'all 0.3s'
+                    }}>
+                        <div style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: '15px', fontSize: '18px' }}>
+                            {step.description}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '15px' }}>
+                            {step.currentNode && (
+                                <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}>
+                                    <strong>Current Node:</strong> {step.currentNode.val}
+                                </div>
+                            )}
+                            {step.leftMax !== null && (
+                                <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}>
+                                    <strong>Left Max:</strong> {step.leftMax}
+                                </div>
+                            )}
+                            {step.rightMax !== null && (
+                                <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}>
+                                    <strong>Right Max:</strong> {step.rightMax}
+                                </div>
+                            )}
+                            {step.localMax !== null && (
+                                <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}>
+                                    <strong>Path Through Node:</strong> {step.localMax}
+                                </div>
+                            )}
+                            <div style={{ padding: '10px', background: step.phase === 'new_max' ? '#4caf50' : 'white', color: step.phase === 'new_max' ? 'white' : 'black', borderRadius: '8px', fontWeight: 'bold' }}>
+                                <strong>Global Max:</strong> {step.globalMax === -Infinity ? 'N/A' : step.globalMax}
+                            </div>
+                            {step.returnValue !== undefined && (
+                                <div style={{ padding: '10px', background: 'white', borderRadius: '8px' }}>
+                                    <strong>Return Value:</strong> {step.returnValue}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Tree Visualization */}
+                    <div style={{ marginBottom: '30px', background: '#f8f9fa', borderRadius: '10px', padding: '20px', minHeight: '400px', position: 'relative', overflow: 'auto' }}>
+                        <h3 style={{ color: '#667eea', marginTop: 0, marginBottom: '20px' }}>Tree Structure:</h3>
+                        <svg width="800" height="500" style={{ display: 'block', margin: '0 auto' }}>
+                            {/* Draw edges first */}
+                            {positions.map((pos, idx) => {
+                                const lines = [];
+                                if (pos.node.left) {
+                                    const leftPos = positions.find(p => p.node === pos.node.left);
+                                    if (leftPos) {
+                                        const isInPath = step.currentPath.includes(pos.node) && step.currentPath.includes(leftPos.node);
+                                        const isInBestPath = step.bestPath.includes(pos.node) && step.bestPath.includes(leftPos.node);
+                                        lines.push(
+                                            <line
+                                                key={`left-${idx}`}
+                                                x1={pos.x}
+                                                y1={pos.y}
+                                                x2={leftPos.x}
+                                                y2={leftPos.y}
+                                                stroke={isInBestPath && step.phase === 'complete' ? '#ffc107' : isInPath ? '#4caf50' : '#bdbdbd'}
+                                                strokeWidth={isInBestPath && step.phase === 'complete' ? '4' : isInPath ? '3' : '2'}
+                                            />
+                                        );
+                                    }
+                                }
+                                if (pos.node.right) {
+                                    const rightPos = positions.find(p => p.node === pos.node.right);
+                                    if (rightPos) {
+                                        const isInPath = step.currentPath.includes(pos.node) && step.currentPath.includes(rightPos.node);
+                                        const isInBestPath = step.bestPath.includes(pos.node) && step.bestPath.includes(rightPos.node);
+                                        lines.push(
+                                            <line
+                                                key={`right-${idx}`}
+                                                x1={pos.x}
+                                                y1={pos.y}
+                                                x2={rightPos.x}
+                                                y2={rightPos.y}
+                                                stroke={isInBestPath && step.phase === 'complete' ? '#ffc107' : isInPath ? '#4caf50' : '#bdbdbd'}
+                                                strokeWidth={isInBestPath && step.phase === 'complete' ? '4' : isInPath ? '3' : '2'}
+                                            />
+                                        );
+                                    }
+                                }
+                                return lines;
+                            })}
+
+                            {/* Draw nodes */}
+                            {positions.map((pos, idx) => (
+                                <g key={idx}>
+                                    <circle
+                                        cx={pos.x}
+                                        cy={pos.y}
+                                        r="30"
+                                        fill={getNodeColor(pos.node)}
+                                        stroke={getNodeBorder(pos.node).split(' ')[2]}
+                                        strokeWidth={getNodeBorder(pos.node).split(' ')[0]}
+                                        style={{ transition: 'all 0.3s' }}
+                                    />
+                                    <text
+                                        x={pos.x}
+                                        y={pos.y}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        style={{ 
+                                            fontSize: '18px', 
+                                            fontWeight: 'bold',
+                                            fill: getNodeColor(pos.node) === '#e0e0e0' ? '#666' : 'white'
+                                        }}
+                                    >
+                                        {pos.node.val}
+                                    </text>
+                                </g>
+                            ))}
+                        </svg>
+                    </div>
+
+                    {/* Best Path Display */}
+                    {step.bestPath.length > 0 && (
+                        <div style={{ 
+                            marginBottom: '20px',
+                            padding: '20px',
+                            background: step.phase === 'complete' ? 'linear-gradient(135deg, #fff9c4 0%, #ffe082 100%)' : '#e8f5e9',
+                            borderRadius: '10px',
+                            border: `3px solid ${step.phase === 'complete' ? '#ffc107' : '#4caf50'}`
+                        }}>
+                            <h3 style={{ color: step.phase === 'complete' ? '#f57f17' : '#2e7d32', marginTop: 0 }}>
+                                {step.phase === 'complete' ? '🏆 Final Answer:' : '💡 Current Best Path:'}
+                            </h3>
+                            <div style={{ fontSize: '18px', marginBottom: '10px' }}>
+                                <strong>Path:</strong> {step.bestPath.map(n => n.val).join(' → ')}
+                            </div>
+                            <div style={{ fontSize: '18px' }}>
+                                <strong>Sum:</strong> {step.globalMax}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Algorithm Explanation */}
+                    <div style={{ padding: '20px', background: '#f8f9fa', borderRadius: '10px' }}>
+                        <h4 style={{ marginTop: 0, color: '#667eea' }}>How It Works:</h4>
+                        <div style={{ lineHeight: '1.8', color: '#333' }}>
+                            <p><strong>Key Insight:</strong> For each node, we can calculate the maximum path sum that passes through it by:</p>
+                            <ol style={{ marginLeft: '20px' }}>
+                                <li><strong>Get left contribution:</strong> max(0, max path from left child)</li>
+                                <li><strong>Get right contribution:</strong> max(0, max path from right child)</li>
+                                <li><strong>Calculate path through node:</strong> left + node.val + right</li>
+                                <li><strong>Update global max</strong> if this path is better</li>
+                                <li><strong>Return to parent:</strong> node.val + max(left, right) (can only use one branch)</li>
+                            </ol>
+                            <p style={{ marginTop: '15px', padding: '15px', background: 'white', borderRadius: '8px', border: '2px solid #667eea' }}>
+                                <strong>Why max(0, ...)? </strong>If a subtree gives negative sum, we exclude it (use 0 instead) since including it would decrease our path sum.
+                            </p>
+                        </div>
+
+                        <h4 style={{ color: '#667eea', marginTop: '20px' }}>Legend:</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#2196f3', borderRadius: '50%', border: '4px solid #1976d2' }}></div>
+                                <span>Current Node</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#4caf50', borderRadius: '50%' }}></div>
+                                <span>Path Being Evaluated</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#ffd700', borderRadius: '50%', border: '4px solid #ff9800' }}></div>
+                                <span>Maximum Path (Final)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#9e9e9e', borderRadius: '50%' }}></div>
+                                <span>Visited Node</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '30px', height: '30px', background: '#e0e0e0', borderRadius: '50%' }}></div>
+                                <span>Unvisited Node</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<BinaryTreeMaxPathVisualizer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
