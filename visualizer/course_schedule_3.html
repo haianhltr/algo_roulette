@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Schedule III Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #555;
+            min-width: 120px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            min-width: 300px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-hint {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-prev {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-next {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #dc3545;
+            color: white;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .explanation {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .explanation-text {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .code-container {
+            background: #282c34;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .code-title {
+            color: #61dafb;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .code-line {
+            color: #abb2bf;
+            padding: 4px 8px;
+            line-height: 1.6;
+            transition: all 0.3s;
+            border-radius: 4px;
+            margin: 2px 0;
+        }
+
+        .code-line.highlight {
+            background: rgba(97, 218, 251, 0.2);
+            border-left: 4px solid #61dafb;
+            padding-left: 12px;
+            transform: translateX(4px);
+            box-shadow: 0 0 10px rgba(97, 218, 251, 0.3);
+        }
+
+        .code-line.context {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .code-keyword {
+            color: #c678dd;
+            font-weight: 600;
+        }
+
+        .code-function {
+            color: #61dafb;
+        }
+
+        .code-variable {
+            color: #e06c75;
+        }
+
+        .code-number {
+            color: #d19a66;
+        }
+
+        .code-comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+
+        .line-number {
+            display: inline-block;
+            width: 30px;
+            color: #5c6370;
+            user-select: none;
+            margin-right: 15px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .courses-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .course-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ddd;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-item.current {
+            border-left-color: #fdcb6e;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .course-item.taken {
+            border-left-color: #00b894;
+            background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
+        }
+
+        .course-item.skipped {
+            border-left-color: #d63031;
+            background: #fab1a0;
+            opacity: 0.7;
+        }
+
+        .course-item.removed {
+            border-left-color: #e17055;
+            background: #fdcb6e;
+            opacity: 0.8;
+        }
+
+        .course-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .course-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .course-detail {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .course-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-taken {
+            background: #00b894;
+            color: white;
+        }
+
+        .badge-skipped {
+            background: #d63031;
+            color: white;
+        }
+
+        .badge-removed {
+            background: #e17055;
+            color: white;
+        }
+
+        .variables-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .variables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .variable {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .variable-name {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .variable-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .heap-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .heap-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .heap-items {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            min-height: 80px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .heap-item {
+            width: 80px;
+            height: 70px;
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .heap-item.top {
+            border: 3px solid #e17055;
+            background: linear-gradient(135deg, #ff7675 0%, #e17055 100%);
+        }
+
+        .heap-value {
+            font-size: 1.3em;
+        }
+
+        .heap-label {
+            font-size: 0.7em;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .timeline-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .timeline {
+            display: flex;
+            gap: 5px;
+            min-width: 800px;
+        }
+
+        .timeline-segment {
+            height: 60px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s;
+            position: relative;
+            min-width: 40px;
+        }
+
+        .timeline-label {
+            font-size: 0.85em;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Course Schedule III</h1>
+        <p class="subtitle">Visualize the greedy algorithm with max heap optimization</p>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label>Courses:</label>
+                <input type="text" id="coursesInput" value="[[100,200],[200,1300],[1000,1250],[2000,3200]]" placeholder="e.g., [[100,200],[200,1300]]">
+            </div>
+            <div class="input-hint">Format: [[duration1, deadline1], [duration2, deadline2], ...]</div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn-start" onclick="startVisualization()">Start Visualization</button>
+            </div>
+        </div>
+
+        <div id="visualizationArea" style="display: none;">
+            <div class="btn-group">
+                <button class="btn-prev" id="prevBtn" onclick="previousStep()">⬅️ Previous</button>
+                <button class="btn-next" id="nextBtn" onclick="nextStep()">Next ➡️</button>
+                <button class="btn-reset" onclick="resetVisualization()">🔄 Reset</button>
+            </div>
+
+            <div class="explanation" id="explanation">
+                <div class="explanation-title">Step Explanation</div>
+                <div class="explanation-text" id="explanationText"></div>
+            </div>
+
+            <div class="code-container">
+                <div class="code-title">💻 Python Code (Highlighted Line Being Executed)</div>
+                <div id="codeDisplay"></div>
+            </div>
+
+            <div class="variables-container">
+                <div class="section-title">Variables</div>
+                <div class="variables-grid" id="variablesGrid"></div>
+            </div>
+
+            <div class="two-column">
+                <div class="courses-container">
+                    <div class="section-title">Sorted Courses (by deadline)</div>
+                    <div id="coursesDisplay"></div>
+                </div>
+
+                <div class="heap-container">
+                    <div class="heap-title">Max Heap (stores durations of taken courses)</div>
+                    <div class="heap-items" id="heapDisplay"></div>
+                </div>
+            </div>
+
+            <div class="timeline-container">
+                <div class="section-title">Timeline (Current Time: <span id="timelineTitle">0</span> days)</div>
+                <div class="timeline" id="timeline"></div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);"></div>
+                    <span>Current Course</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);"></div>
+                    <span>Taken</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #fab1a0;"></div>
+                    <span>Skipped</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: #fdcb6e;"></div>
+                    <span>Removed from Schedule</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let courses = [];
+        let steps = [];
+        let currentStep = 0;
+
+        const codeLines = [
+            { line: 1, code: 'def scheduleCourse(self, courses):', type: 'definition' },
+            { line: 2, code: '    courses.sort(key=lambda x: x[1])', type: 'sort' },
+            { line: 3, code: '    time = 0', type: 'init' },
+            { line: 4, code: '    maxheap = []', type: 'init' },
+            { line: 5, code: '    ', type: 'blank' },
+            { line: 6, code: '    for d, last in courses:', type: 'loop' },
+            { line: 7, code: '        time += d', type: 'add_time' },
+            { line: 8, code: '        heapq.heappush(maxheap, -d)', type: 'push_heap' },
+            { line: 9, code: '        if time > last:', type: 'check_overflow' },
+            { line: 10, code: '            time += heapq.heappop(maxheap)', type: 'pop_heap' },
+            { line: 11, code: '    ', type: 'blank' },
+            { line: 12, code: '    return len(maxheap)', type: 'return' }
+        ];
+
+        function renderCode(highlightTypes = []) {
+            const codeDisplay = document.getElementById('codeDisplay');
+            codeDisplay.innerHTML = '';
+
+            codeLines.forEach(lineObj => {
+                const div = document.createElement('div');
+                div.className = 'code-line';
+                
+                const shouldHighlight = highlightTypes.includes(lineObj.type);
+                const isContext = highlightTypes.length > 0 && !shouldHighlight && 
+                                 lineObj.type !== 'blank' && lineObj.type !== 'definition';
+                
+                if (shouldHighlight) {
+                    div.classList.add('highlight');
+                } else if (isContext) {
+                    div.classList.add('context');
+                }
+
+                let coloredCode = lineObj.code;
+                
+                coloredCode = coloredCode.replace(/\b(def|for|in|if|return)\b/g, '<span class="code-keyword">$1</span>');
+                coloredCode = coloredCode.replace(/\b(sort|heappush|heappop|len|lambda)\b/g, '<span class="code-function">$1</span>');
+                coloredCode = coloredCode.replace(/\b(courses|time|maxheap|d|last|self|heapq|x)\b/g, '<span class="code-variable">$1</span>');
+                coloredCode = coloredCode.replace(/\b(-?\d+)\b/g, '<span class="code-number">$1</span>');
+                coloredCode = coloredCode.replace(/(\[1\])/g, '<span class="code-number">$1</span>');
+
+                div.innerHTML = `<span class="line-number">${lineObj.line}</span>${coloredCode}`;
+                codeDisplay.appendChild(div);
+            });
+        }
+
+        function startVisualization() {
+            const coursesInput = document.getElementById('coursesInput').value;
+
+            try {
+                courses = JSON.parse(coursesInput);
+                if (!Array.isArray(courses) || courses.length === 0) {
+                    throw new Error('Invalid input');
+                }
+            } catch (e) {
+                alert('Please enter valid courses in format: [[duration1, deadline1], [duration2, deadline2], ...]');
+                return;
+            }
+
+            generateSteps();
+            currentStep = 0;
+            document.getElementById('visualizationArea').style.display = 'block';
+            renderStep();
+        }
+
+        function generateSteps() {
+            steps = [];
+            const originalCourses = courses.map((c, i) => ({duration: c[0], deadline: c[1], originalIndex: i}));
+
+            // Initial step
+            steps.push({
+                courses: originalCourses.map(c => ({...c})),
+                time: 0,
+                maxheap: [],
+                currentIndex: -1,
+                action: 'initial',
+                codeLines: ['init'],
+                explanation: 'Starting the algorithm. We need to sort courses by deadline first.'
+            });
+
+            // Sort courses
+            const sortedCourses = [...originalCourses].sort((a, b) => a.deadline - b.deadline);
+            
+            steps.push({
+                courses: sortedCourses.map(c => ({...c})),
+                time: 0,
+                maxheap: [],
+                currentIndex: -1,
+                action: 'sorted',
+                codeLines: ['sort'],
+                explanation: `Sorted courses by deadline (earliest deadline first). This greedy approach ensures we consider courses in the optimal order.`
+            });
+
+            let time = 0;
+            let maxheap = [];
+            let takenCourses = [];
+            let skippedCourses = [];
+            let removedCourses = [];
+
+            for (let i = 0; i < sortedCourses.length; i++) {
+                const {duration, deadline, originalIndex} = sortedCourses[i];
+
+                // Process current course
+                steps.push({
+                    courses: sortedCourses.map(c => ({...c})),
+                    time: time,
+                    maxheap: [...maxheap],
+                    currentIndex: i,
+                    takenCourses: [...takenCourses],
+                    skippedCourses: [...skippedCourses],
+                    removedCourses: [...removedCourses],
+                    action: 'process_start',
+                    codeLines: ['loop'],
+                    explanation: `Processing course ${i}: duration=${duration} days, deadline=${deadline}. Current time: ${time}`
+                });
+
+                // Add duration to time
+                time += duration;
+                steps.push({
+                    courses: sortedCourses.map(c => ({...c})),
+                    time: time,
+                    maxheap: [...maxheap],
+                    currentIndex: i,
+                    currentDuration: duration,
+                    takenCourses: [...takenCourses],
+                    skippedCourses: [...skippedCourses],
+                    removedCourses: [...removedCourses],
+                    action: 'add_time',
+                    codeLines: ['add_time'],
+                    explanation: `Adding duration ${duration} to time. New time: ${time}`
+                });
+
+                // Push to heap
+                maxheap.push(duration);
+                maxheap.sort((a, b) => b - a);
+                takenCourses.push(i);
+
+                steps.push({
+                    courses: sortedCourses.map(c => ({...c})),
+                    time: time,
+                    maxheap: [...maxheap],
+                    currentIndex: i,
+                    currentDuration: duration,
+                    takenCourses: [...takenCourses],
+                    skippedCourses: [...skippedCourses],
+                    removedCourses: [...removedCourses],
+                    action: 'push_heap',
+                    codeLines: ['push_heap'],
+                    explanation: `Pushed duration ${duration} to max heap (stored as -${duration}). Heap now contains: [${maxheap.join(', ')}]`
+                });
+
+                // Check if time exceeds deadline
+                steps.push({
+                    courses: sortedCourses.map(c => ({...c})),
+                    time: time,
+                    maxheap: [...maxheap],
+                    currentIndex: i,
+                    takenCourses: [...takenCourses],
+                    skippedCourses: [...skippedCourses],
+                    removedCourses: [...removedCourses],
+                    action: 'check_overflow',
+                    codeLines: ['check_overflow'],
+                    explanation: `Checking if time ${time} > deadline ${deadline}? ${time > deadline}`
+                });
+
+                // If time exceeds deadline, remove longest course
+                if (time > deadline) {
+                    const removed = maxheap.shift(); // Remove max (longest)
+                    time -= removed;
+                    
+                    // Find which course to mark as removed
+                    for (let j = takenCourses.length - 1; j >= 0; j--) {
+                        if (sortedCourses[takenCourses[j]].duration === removed && !removedCourses.includes(takenCourses[j])) {
+                            removedCourses.push(takenCourses[j]);
+                            takenCourses.splice(j, 1);
+                            break;
+                        }
+                    }
+
+                    steps.push({
+                        courses: sortedCourses.map(c => ({...c})),
+                        time: time,
+                        maxheap: [...maxheap],
+                        currentIndex: i,
+                        removedDuration: removed,
+                        takenCourses: [...takenCourses],
+                        skippedCourses: [...skippedCourses],
+                        removedCourses: [...removedCourses],
+                        action: 'pop_heap',
+                        codeLines: ['pop_heap'],
+                        explanation: `Time exceeded deadline! Removing longest course (duration ${removed}) from schedule. New time: ${time}. This allows us to potentially take more shorter courses.`
+                    });
+                }
+            }
+
+            // Final step
+            steps.push({
+                courses: sortedCourses.map(c => ({...c})),
+                time: time,
+                maxheap: [...maxheap],
+                currentIndex: sortedCourses.length,
+                takenCourses: [...takenCourses],
+                skippedCourses: [...skippedCourses],
+                removedCourses: [...removedCourses],
+                action: 'complete',
+                codeLines: ['return'],
+                explanation: `Algorithm complete! Maximum courses that can be taken: ${maxheap.length}. Final schedule includes ${maxheap.length} courses with total time ${time} days.`
+            });
+        }
+
+        function renderStep() {
+            const step = steps[currentStep];
+            
+            document.getElementById('prevBtn').disabled = currentStep === 0;
+            document.getElementById('nextBtn').disabled = currentStep === steps.length - 1;
+
+            renderCode(step.codeLines || []);
+            document.getElementById('explanationText').textContent = step.explanation;
+
+            // Render variables
+            const variablesGrid = document.getElementById('variablesGrid');
+            variablesGrid.innerHTML = `
+                <div class="variable">
+                    <div class="variable-name">time</div>
+                    <div class="variable-value">${step.time}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">heap length</div>
+                    <div class="variable-value">${step.maxheap.length}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">current course</div>
+                    <div class="variable-value">${step.currentIndex >= 0 && step.currentIndex < step.courses.length ? step.currentIndex : 'N/A'}</div>
+                </div>
+            `;
+
+            if (step.currentDuration !== undefined) {
+                variablesGrid.innerHTML += `
+                    <div class="variable">
+                        <div class="variable-name">d (duration)</div>
+                        <div class="variable-value">${step.currentDuration}</div>
+                    </div>
+                `;
+            }
+
+            if (step.currentIndex >= 0 && step.currentIndex < step.courses.length) {
+                variablesGrid.innerHTML += `
+                    <div class="variable">
+                        <div class="variable-name">last (deadline)</div>
+                        <div class="variable-value">${step.courses[step.currentIndex].deadline}</div>
+                    </div>
+                `;
+            }
+
+            // Render courses
+            const coursesDisplay = document.getElementById('coursesDisplay');
+            coursesDisplay.innerHTML = '';
+            step.courses.forEach((course, idx) => {
+                const div = document.createElement('div');
+                div.className = 'course-item';
+                
+                if (idx === step.currentIndex) {
+                    div.classList.add('current');
+                } else if (step.takenCourses && step.takenCourses.includes(idx)) {
+                    div.classList.add('taken');
+                } else if (step.removedCourses && step.removedCourses.includes(idx)) {
+                    div.classList.add('removed');
+                } else if (idx < step.currentIndex) {
+                    div.classList.add('skipped');
+                }
+
+                let badge = '';
+                if (step.takenCourses && step.takenCourses.includes(idx)) {
+                    badge = '<span class="course-badge badge-taken">TAKEN</span>';
+                } else if (step.removedCourses && step.removedCourses.includes(idx)) {
+                    badge = '<span class="course-badge badge-removed">REMOVED</span>';
+                } else if (idx < step.currentIndex) {
+                    badge = '<span class="course-badge badge-skipped">SKIPPED</span>';
+                }
+
+                div.innerHTML = `
+                    <div class="course-info">
+                        <span class="course-label">Course ${idx}</span>
+                        <span class="course-detail">[${course.duration}d, deadline: ${course.deadline}]</span>
+                    </div>
+                    ${badge}
+                `;
+                coursesDisplay.appendChild(div);
+            });
+
+            // Render heap
+            const heapDisplay = document.getElementById('heapDisplay');
+            if (step.maxheap.length === 0) {
+                heapDisplay.innerHTML = '<div class="empty-state">Heap is empty</div>';
+            } else {
+                heapDisplay.innerHTML = '';
+                step.maxheap.forEach((val, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'heap-item';
+                    if (idx === 0) {
+                        div.classList.add('top');
+                    }
+                    div.innerHTML = `
+                        <div class="heap-value">${val}</div>
+                        <div class="heap-label">${idx === 0 ? 'MAX' : ''}</div>
+                    `;
+                    heapDisplay.appendChild(div);
+                });
+            }
+
+            // Render timeline
+            renderTimeline(step);
+        }
+
+        function renderTimeline(step) {
+            const timeline = document.getElementById('timeline');
+            const timelineTitle = document.getElementById('timelineTitle');
+            timelineTitle.textContent = step.time;
+
+            timeline.innerHTML = '';
+
+            if (step.takenCourses && step.takenCourses.length > 0) {
+                let currentTime = 0;
+                const colors = ['#00b894', '#00cec9', '#0984e3', '#6c5ce7', '#a29bfe', '#fd79a8'];
+                
+                step.takenCourses.forEach((courseIdx, idx) => {
+                    const course = step.courses[courseIdx];
+                    const width = Math.max(course.duration * 2, 40);
+                    
+                    const segment = document.createElement('div');
+                    segment.className = 'timeline-segment';
+                    segment.style.width = width + 'px';
+                    segment.style.background = colors[idx % colors.length];
+                    segment.innerHTML = `
+                        <div class="timeline-label">
+                            C${courseIdx}<br>${course.duration}d
+                        </div>
+                    `;
+                    timeline.appendChild(segment);
+                });
+            } else {
+                timeline.innerHTML = '<div class="empty-state">No courses scheduled yet</div>';
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep();
+            }
+        }
+
+        function resetVisualization() {
+            currentStep = 0;
+            renderStep();
+        }
+    </script>
+</body>
+</html>
