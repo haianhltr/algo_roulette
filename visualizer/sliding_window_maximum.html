@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Window Maximum Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-group input {
+            flex: 2;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-prev {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-next {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #dc3545;
+            color: white;
+        }
+
+        .visualization {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .array-container {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .array-item {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .array-item.in-window {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .array-item.current {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-color: #fdcb6e;
+            border-width: 3px;
+            transform: scale(1.1);
+        }
+
+        .array-item.in-deque {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+            border-color: #6c5ce7;
+        }
+
+        .array-item.max-element {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            border-color: #00b894;
+            border-width: 3px;
+        }
+
+        .array-value {
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .array-index {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .deque-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .deque-items {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            min-height: 80px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .deque-item {
+            width: 80px;
+            height: 70px;
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .deque-item.front {
+            border: 3px solid #00b894;
+        }
+
+        .deque-label {
+            font-size: 0.7em;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .deque-value {
+            font-size: 1.3em;
+        }
+
+        .variables-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .variables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .variable {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .variable-name {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .variable-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .result-container {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .result-items {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .result-item {
+            width: 50px;
+            height: 50px;
+            background: white;
+            color: #00b894;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .explanation {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .explanation-text {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .code-container {
+            background: #282c34;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .code-title {
+            color: #61dafb;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .code-line {
+            color: #abb2bf;
+            padding: 4px 8px;
+            line-height: 1.6;
+            transition: all 0.3s;
+            border-radius: 4px;
+            margin: 2px 0;
+        }
+
+        .code-line.highlight {
+            background: rgba(97, 218, 251, 0.2);
+            border-left: 4px solid #61dafb;
+            padding-left: 12px;
+            transform: translateX(4px);
+            box-shadow: 0 0 10px rgba(97, 218, 251, 0.3);
+        }
+
+        .code-line.context {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .code-keyword {
+            color: #c678dd;
+            font-weight: 600;
+        }
+
+        .code-function {
+            color: #61dafb;
+        }
+
+        .code-variable {
+            color: #e06c75;
+        }
+
+        .code-number {
+            color: #d19a66;
+        }
+
+        .code-comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+
+        .code-string {
+            color: #98c379;
+        }
+
+        .line-number {
+            display: inline-block;
+            width: 30px;
+            color: #5c6370;
+            user-select: none;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Sliding Window Maximum</h1>
+        <p class="subtitle">Visualize the monotonic deque algorithm step by step</p>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label>
+                    Array (nums):
+                    <input type="text" id="numsInput" value="1,3,-1,-3,5,3,6,7" placeholder="e.g., 1,3,-1,-3,5,3,6,7">
+                </label>
+            </div>
+            <div class="input-group">
+                <label>
+                    Window Size (k):
+                    <input type="number" id="kInput" value="3" min="1" placeholder="e.g., 3">
+                </label>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn-start" onclick="startVisualization()">Start Visualization</button>
+            </div>
+        </div>
+
+        <div id="visualizationArea" style="display: none;">
+            <div class="btn-group">
+                <button class="btn-prev" id="prevBtn" onclick="previousStep()">⬅️ Previous</button>
+                <button class="btn-next" id="nextBtn" onclick="nextStep()">Next ➡️</button>
+                <button class="btn-reset" onclick="resetVisualization()">🔄 Reset</button>
+            </div>
+
+            <div class="explanation" id="explanation">
+                <div class="explanation-title">Step Explanation</div>
+                <div class="explanation-text" id="explanationText"></div>
+            </div>
+
+            <div class="code-container">
+                <div class="code-title">💻 Python Code (Highlighted Line Being Executed)</div>
+                <div id="codeDisplay"></div>
+            </div>
+
+            <div class="visualization">
+                <div class="section-title">Input Array</div>
+                <div class="array-container" id="arrayContainer"></div>
+            </div>
+
+            <div class="variables-container">
+                <div class="section-title">Variables</div>
+                <div class="variables-grid" id="variablesGrid"></div>
+            </div>
+
+            <div class="deque-container">
+                <div class="section-title">Deque (stores indices in decreasing order of values)</div>
+                <div class="deque-items" id="dequeContainer"></div>
+            </div>
+
+            <div class="result-container">
+                <div class="section-title">Result Array</div>
+                <div class="result-items" id="resultContainer"></div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-color: #fdcb6e;"></div>
+                    <span>Current Element</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border-color: #667eea;"></div>
+                    <span>In Window</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);"></div>
+                    <span>In Deque</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #00b894 0%, #00cec9 100%); border-color: #00b894;"></div>
+                    <span>Window Maximum</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nums = [];
+        let k = 0;
+        let steps = [];
+        let currentStep = 0;
+
+        const codeLines = [
+            { line: 1, code: 'def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:', type: 'definition' },
+            { line: 2, code: '    dq = deque()', type: 'init' },
+            { line: 3, code: '    result = []', type: 'init' },
+            { line: 4, code: '    for i, num in enumerate(nums):', type: 'loop' },
+            { line: 5, code: '        while dq and nums[dq[-1]] <= num:', type: 'while_check' },
+            { line: 6, code: '            dq.pop()', type: 'pop_smaller' },
+            { line: 7, code: '        ', type: 'blank' },
+            { line: 8, code: '        dq.append(i)', type: 'push_current' },
+            { line: 9, code: '        if dq[0] <= i - k:', type: 'window_check' },
+            { line: 10, code: '            dq.popleft()', type: 'pop_outside' },
+            { line: 11, code: '        if i >= k - 1:', type: 'result_check' },
+            { line: 12, code: '            result.append(nums[dq[0]])', type: 'add_result' },
+            { line: 13, code: '    return result', type: 'return' }
+        ];
+
+        function renderCode(highlightTypes = []) {
+            const codeDisplay = document.getElementById('codeDisplay');
+            codeDisplay.innerHTML = '';
+
+            codeLines.forEach(lineObj => {
+                const div = document.createElement('div');
+                div.className = 'code-line';
+                
+                const shouldHighlight = highlightTypes.includes(lineObj.type);
+                const isContext = highlightTypes.length > 0 && !shouldHighlight && 
+                                 lineObj.type !== 'blank' && lineObj.type !== 'definition';
+                
+                if (shouldHighlight) {
+                    div.classList.add('highlight');
+                } else if (isContext) {
+                    div.classList.add('context');
+                }
+
+                // Syntax highlighting
+                let coloredCode = lineObj.code;
+                
+                // Keywords
+                coloredCode = coloredCode.replace(/\b(def|for|in|while|if|return)\b/g, '<span class="code-keyword">$1</span>');
+                
+                // Function names
+                coloredCode = coloredCode.replace(/\b(enumerate|append|pop|popleft)\b/g, '<span class="code-function">$1</span>');
+                
+                // Variables
+                coloredCode = coloredCode.replace(/\b(dq|result|nums|num|i|k|self)\b/g, '<span class="code-variable">$1</span>');
+                
+                // Numbers
+                coloredCode = coloredCode.replace(/\b(-?\d+)\b/g, '<span class="code-number">$1</span>');
+
+                div.innerHTML = `<span class="line-number">${lineObj.line}</span>${coloredCode}`;
+                codeDisplay.appendChild(div);
+            });
+        }
+
+        function startVisualization() {
+            const numsInput = document.getElementById('numsInput').value;
+            const kInput = document.getElementById('kInput').value;
+
+            nums = numsInput.split(',').map(n => parseInt(n.trim()));
+            k = parseInt(kInput);
+
+            if (nums.some(isNaN) || isNaN(k) || k < 1 || k > nums.length) {
+                alert('Please enter valid inputs!');
+                return;
+            }
+
+            generateSteps();
+            currentStep = 0;
+            document.getElementById('visualizationArea').style.display = 'block';
+            renderStep();
+        }
+
+        function generateSteps() {
+            steps = [];
+            let dq = [];
+            let result = [];
+
+            // Initial step
+            steps.push({
+                i: -1,
+                num: null,
+                dq: [...dq],
+                result: [...result],
+                action: 'initial',
+                codeLines: ['init'],
+                explanation: 'Starting the algorithm. We initialize an empty deque and result array.'
+            });
+
+            for (let i = 0; i < nums.length; i++) {
+                const num = nums[i];
+
+                // Before removing smaller elements
+                steps.push({
+                    i: i,
+                    num: num,
+                    dq: [...dq],
+                    result: [...result],
+                    action: 'process_start',
+                    codeLines: ['loop'],
+                    explanation: `Processing index ${i} with value ${num}. Current deque contains indices: [${dq.join(', ')}]`
+                });
+
+                // Remove elements smaller than current from back
+                let removed = [];
+                const initialDqLength = dq.length;
+                while (dq.length > 0 && nums[dq[dq.length - 1]] <= num) {
+                    const removedIdx = dq.pop();
+                    removed.push(removedIdx);
+                    steps.push({
+                        i: i,
+                        num: num,
+                        dq: [...dq],
+                        result: [...result],
+                        action: 'pop_smaller',
+                        removedIndex: removedIdx,
+                        codeLines: ['while_check', 'pop_smaller'],
+                        explanation: `Removing index ${removedIdx} (value ${nums[removedIdx]}) from deque back because nums[${removedIdx}] = ${nums[removedIdx]} <= ${num}`
+                    });
+                }
+
+                // Show while condition is false (if we checked it)
+                if (initialDqLength > 0 || removed.length > 0) {
+                    steps.push({
+                        i: i,
+                        num: num,
+                        dq: [...dq],
+                        result: [...result],
+                        action: 'while_done',
+                        codeLines: ['while_check'],
+                        explanation: `While loop condition is now false. Either deque is empty or nums[dq[-1]] > num.`
+                    });
+                }
+
+                // Add current element
+                dq.push(i);
+                steps.push({
+                    i: i,
+                    num: num,
+                    dq: [...dq],
+                    result: [...result],
+                    action: 'push_current',
+                    codeLines: ['push_current'],
+                    explanation: `Adding current index ${i} to the back of deque. Deque now: [${dq.join(', ')}]`
+                });
+
+                // Check if front is outside window
+                steps.push({
+                    i: i,
+                    num: num,
+                    dq: [...dq],
+                    result: [...result],
+                    action: 'check_window',
+                    codeLines: ['window_check'],
+                    explanation: `Checking if front element dq[0]=${dq[0]} is outside window: ${dq[0]} <= ${i} - ${k} = ${i - k}? ${dq[0] <= i - k}`
+                });
+
+                // Remove elements outside window from front
+                if (dq[0] <= i - k) {
+                    const removedIdx = dq.shift();
+                    steps.push({
+                        i: i,
+                        num: num,
+                        dq: [...dq],
+                        result: [...result],
+                        action: 'pop_outside',
+                        removedIndex: removedIdx,
+                        codeLines: ['pop_outside'],
+                        explanation: `Removing index ${removedIdx} from deque front because it's outside the window.`
+                    });
+                }
+
+                // Check if window is complete
+                steps.push({
+                    i: i,
+                    num: num,
+                    dq: [...dq],
+                    result: [...result],
+                    action: 'check_result',
+                    codeLines: ['result_check'],
+                    explanation: `Checking if window is complete: i=${i} >= k-1=${k-1}? ${i >= k - 1}`
+                });
+
+                // Add to result if window is complete
+                if (i >= k - 1) {
+                    result.push(nums[dq[0]]);
+                    steps.push({
+                        i: i,
+                        num: num,
+                        dq: [...dq],
+                        result: [...result],
+                        action: 'add_result',
+                        codeLines: ['add_result'],
+                        explanation: `Window is complete! Adding maximum nums[${dq[0]}] = ${nums[dq[0]]} to result. Window: [${i - k + 1}, ${i}]`
+                    });
+                }
+            }
+
+            // Final step
+            steps.push({
+                i: nums.length,
+                num: null,
+                dq: [],
+                result: [...result],
+                action: 'complete',
+                codeLines: ['return'],
+                explanation: `Algorithm complete! Returning result: [${result.join(', ')}]`
+            });
+        }
+
+        function renderStep() {
+            const step = steps[currentStep];
+            
+            // Update buttons
+            document.getElementById('prevBtn').disabled = currentStep === 0;
+            document.getElementById('nextBtn').disabled = currentStep === steps.length - 1;
+
+            // Render code with highlighting
+            renderCode(step.codeLines || []);
+
+            // Render explanation
+            document.getElementById('explanationText').textContent = step.explanation;
+
+            // Render array
+            const arrayContainer = document.getElementById('arrayContainer');
+            arrayContainer.innerHTML = '';
+            nums.forEach((num, idx) => {
+                const div = document.createElement('div');
+                div.className = 'array-item';
+                
+                // Highlight current element
+                if (idx === step.i) {
+                    div.classList.add('current');
+                }
+                
+                // Highlight window
+                if (step.i >= 0 && idx >= step.i - k + 1 && idx <= step.i) {
+                    div.classList.add('in-window');
+                }
+                
+                // Highlight elements in deque
+                if (step.dq.includes(idx)) {
+                    div.classList.add('in-deque');
+                }
+                
+                // Highlight maximum element
+                if (step.dq.length > 0 && idx === step.dq[0] && step.i >= k - 1) {
+                    div.classList.add('max-element');
+                }
+                
+                div.innerHTML = `
+                    <div class="array-value">${num}</div>
+                    <div class="array-index">i=${idx}</div>
+                `;
+                arrayContainer.appendChild(div);
+            });
+
+            // Render variables
+            const variablesGrid = document.getElementById('variablesGrid');
+            variablesGrid.innerHTML = `
+                <div class="variable">
+                    <div class="variable-name">Current Index (i)</div>
+                    <div class="variable-value">${step.i >= 0 ? step.i : 'N/A'}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">Current Value (num)</div>
+                    <div class="variable-value">${step.num !== null ? step.num : 'N/A'}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">Window Size (k)</div>
+                    <div class="variable-value">${k}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">Window Start</div>
+                    <div class="variable-value">${step.i >= 0 ? Math.max(0, step.i - k + 1) : 'N/A'}</div>
+                </div>
+            `;
+
+            // Render deque
+            const dequeContainer = document.getElementById('dequeContainer');
+            if (step.dq.length === 0) {
+                dequeContainer.innerHTML = '<div class="empty-state">Deque is empty</div>';
+            } else {
+                dequeContainer.innerHTML = '';
+                step.dq.forEach((idx, pos) => {
+                    const div = document.createElement('div');
+                    div.className = 'deque-item';
+                    if (pos === 0) {
+                        div.classList.add('front');
+                    }
+                    div.innerHTML = `
+                        <div class="deque-value">${nums[idx]}</div>
+                        <div class="deque-label">idx=${idx}</div>
+                        <div class="deque-label">${pos === 0 ? 'FRONT' : ''}</div>
+                    `;
+                    dequeContainer.appendChild(div);
+                });
+            }
+
+            // Render result
+            const resultContainer = document.getElementById('resultContainer');
+            if (step.result.length === 0) {
+                resultContainer.innerHTML = '<div class="empty-state">No results yet</div>';
+            } else {
+                resultContainer.innerHTML = '';
+                step.result.forEach(val => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.textContent = val;
+                    resultContainer.appendChild(div);
+                });
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep();
+            }
+        }
+
+        function resetVisualization() {
+            currentStep = 0;
+            renderStep();
+        }
+    </script>
+</body>
+</html>
