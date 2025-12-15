@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reorganize String Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #555;
+            min-width: 120px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            min-width: 300px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-prev {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-next {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #dc3545;
+            color: white;
+        }
+
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .explanation {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .explanation-text {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .code-container {
+            background: #282c34;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .code-title {
+            color: #61dafb;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .code-line {
+            color: #abb2bf;
+            padding: 4px 8px;
+            line-height: 1.6;
+            transition: all 0.3s;
+            border-radius: 4px;
+            margin: 2px 0;
+        }
+
+        .code-line.highlight {
+            background: rgba(97, 218, 251, 0.2);
+            border-left: 4px solid #61dafb;
+            padding-left: 12px;
+            transform: translateX(4px);
+            box-shadow: 0 0 10px rgba(97, 218, 251, 0.3);
+        }
+
+        .code-line.context {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .code-keyword {
+            color: #c678dd;
+            font-weight: 600;
+        }
+
+        .code-function {
+            color: #61dafb;
+        }
+
+        .code-variable {
+            color: #e06c75;
+        }
+
+        .code-number {
+            color: #d19a66;
+        }
+
+        .code-string {
+            color: #98c379;
+        }
+
+        .line-number {
+            display: inline-block;
+            width: 30px;
+            color: #5c6370;
+            user-select: none;
+            margin-right: 15px;
+        }
+
+        .variables-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .variables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .variable {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .variable-name {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .variable-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .freq-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .freq-items {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .freq-item {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            min-width: 80px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .freq-item.used {
+            opacity: 0.5;
+            border-color: #ccc;
+        }
+
+        .freq-char {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .freq-count {
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .heap-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .heap-items {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            min-height: 100px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .heap-item {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .heap-item.popped {
+            background: linear-gradient(135deg, #ff7675 0%, #d63031 100%);
+            border: 3px solid #d63031;
+        }
+
+        .heap-item.top {
+            border: 3px solid #00b894;
+            transform: scale(1.05);
+        }
+
+        .heap-char {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .heap-count {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .result-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .result-display {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 80px;
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .result-char {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: popIn 0.3s ease-out;
+        }
+
+        .result-char.new {
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .string-display {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            letter-spacing: 3px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .warning-title {
+            font-weight: 700;
+            color: #721c24;
+            margin-bottom: 8px;
+        }
+
+        .warning-text {
+            color: #721c24;
+            line-height: 1.6;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success-title {
+            font-weight: 700;
+            color: #155724;
+            margin-bottom: 8px;
+        }
+
+        .success-text {
+            color: #155724;
+            line-height: 1.6;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔤 Reorganize String</h1>
+        <p class="subtitle">Visualize the greedy max heap algorithm step by step</p>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label>Input String:</label>
+                <input type="text" id="stringInput" value="aab" placeholder="e.g., aab, vvvlo">
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn-start" onclick="startVisualization()">Start Visualization</button>
+            </div>
+        </div>
+
+        <div id="visualizationArea" style="display: none;">
+            <div class="btn-group">
+                <button class="btn-prev" id="prevBtn" onclick="previousStep()">⬅️ Previous</button>
+                <button class="btn-next" id="nextBtn" onclick="nextStep()">Next ➡️</button>
+                <button class="btn-reset" onclick="resetVisualization()">🔄 Reset</button>
+            </div>
+
+            <div id="statusBox"></div>
+
+            <div class="explanation" id="explanation">
+                <div class="explanation-title">Step Explanation</div>
+                <div class="explanation-text" id="explanationText"></div>
+            </div>
+
+            <div class="code-container">
+                <div class="code-title">💻 Python Code (Highlighted Line Being Executed)</div>
+                <div id="codeDisplay"></div>
+            </div>
+
+            <div class="variables-container">
+                <div class="section-title">Variables</div>
+                <div class="variables-grid" id="variablesGrid"></div>
+            </div>
+
+            <div class="freq-container">
+                <div class="section-title">Character Frequencies</div>
+                <div class="freq-items" id="freqDisplay"></div>
+            </div>
+
+            <div class="heap-container">
+                <div class="section-title">Max Heap (by frequency)</div>
+                <div class="heap-items" id="heapDisplay"></div>
+            </div>
+
+            <div class="result-container">
+                <div class="section-title">Result String</div>
+                <div class="result-display" id="resultDisplay"></div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);"></div>
+                    <span>In Heap</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #ff7675 0%, #d63031 100%); border: 3px solid #d63031;"></div>
+                    <span>Popped from Heap</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);"></div>
+                    <span>Added to Result</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let inputString = '';
+        let steps = [];
+        let currentStep = 0;
+
+        const codeLines = [
+            { line: 1, code: 'def reorganizeString(self, s: str) -> str:', type: 'definition' },
+            { line: 2, code: '    freq = Counter(s)', type: 'count_freq' },
+            { line: 3, code: '    n = len(s)', type: 'init' },
+            { line: 4, code: '    ', type: 'blank' },
+            { line: 5, code: '    # Feasibility check', type: 'comment' },
+            { line: 6, code: '    if max(freq.values()) > (n + 1) // 2:', type: 'feasibility_check' },
+            { line: 7, code: '        return ""', type: 'return_empty' },
+            { line: 8, code: '    ', type: 'blank' },
+            { line: 9, code: '    heap = [(-count, char) for char, count in freq.items()]', type: 'build_heap' },
+            { line: 10, code: '    heapq.heapify(heap)', type: 'heapify' },
+            { line: 11, code: '    res = []', type: 'init' },
+            { line: 12, code: '    ', type: 'blank' },
+            { line: 13, code: '    while len(heap) >= 2:', type: 'while_check' },
+            { line: 14, code: '        c1, ch1 = heapq.heappop(heap)', type: 'pop_first' },
+            { line: 15, code: '        c2, ch2 = heapq.heappop(heap)', type: 'pop_second' },
+            { line: 16, code: '        ', type: 'blank' },
+            { line: 17, code: '        res.append(ch1)', type: 'append_first' },
+            { line: 18, code: '        res.append(ch2)', type: 'append_second' },
+            { line: 19, code: '        ', type: 'blank' },
+            { line: 20, code: '        if c1 + 1 < 0:', type: 'check_first' },
+            { line: 21, code: '            heapq.heappush(heap, (c1 + 1, ch1))', type: 'push_first' },
+            { line: 22, code: '        if c2 + 1 < 0:', type: 'check_second' },
+            { line: 23, code: '            heapq.heappush(heap, (c2 + 1, ch2))', type: 'push_second' },
+            { line: 24, code: '    ', type: 'blank' },
+            { line: 25, code: '    if heap:', type: 'check_remaining' },
+            { line: 26, code: '        res.append(heap[0][1])', type: 'append_last' },
+            { line: 27, code: '    ', type: 'blank' },
+            { line: 28, code: '    return "".join(res)', type: 'return_result' }
+        ];
+
+        function renderCode(highlightTypes = []) {
+            const codeDisplay = document.getElementById('codeDisplay');
+            codeDisplay.innerHTML = '';
+
+            codeLines.forEach(lineObj => {
+                const div = document.createElement('div');
+                div.className = 'code-line';
+                
+                const shouldHighlight = highlightTypes.includes(lineObj.type);
+                const isContext = highlightTypes.length > 0 && !shouldHighlight && 
+                                 lineObj.type !== 'blank' && lineObj.type !== 'definition' && lineObj.type !== 'comment';
+                
+                if (shouldHighlight) {
+                    div.classList.add('highlight');
+                } else if (isContext) {
+                    div.classList.add('context');
+                }
+
+                let coloredCode = lineObj.code;
+                
+                // First, use placeholder markers to avoid HTML tag conflicts
+                coloredCode = coloredCode.replace(/\b(def|for|in|if|while|return)\b/g, '___KW_START___$1___KW_END___');
+                coloredCode = coloredCode.replace(/\b(Counter|heappop|heappush|heapify|len|max|append|join|values|items)\b/g, '___FN_START___$1___FN_END___');
+                coloredCode = coloredCode.replace(/\b(freq|heap|res|c1|c2|ch1|ch2|n|s|self|heapq|count|char)\b/g, '___VAR_START___$1___VAR_END___');
+                coloredCode = coloredCode.replace(/\b(-?\d+)\b/g, '___NUM_START___$1___NUM_END___');
+                coloredCode = coloredCode.replace(/(#[^\n]*)/g, '___COMMENT_START___$1___COMMENT_END___');
+                coloredCode = coloredCode.replace(/(""|"[^"]*")/g, '___STRING_START___$1___STRING_END___');
+                
+                // Now escape HTML
+                coloredCode = coloredCode
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                
+                // Finally, replace markers with actual HTML span tags
+                coloredCode = coloredCode.replace(/___KW_START___(.*?)___KW_END___/g, '<span class="code-keyword">$1</span>');
+                coloredCode = coloredCode.replace(/___FN_START___(.*?)___FN_END___/g, '<span class="code-function">$1</span>');
+                coloredCode = coloredCode.replace(/___VAR_START___(.*?)___VAR_END___/g, '<span class="code-variable">$1</span>');
+                coloredCode = coloredCode.replace(/___NUM_START___(.*?)___NUM_END___/g, '<span class="code-number">$1</span>');
+                coloredCode = coloredCode.replace(/___COMMENT_START___(.*?)___COMMENT_END___/g, '<span class="code-comment">$1</span>');
+                coloredCode = coloredCode.replace(/___STRING_START___(.*?)___STRING_END___/g, '<span class="code-string">$1</span>');
+
+                div.innerHTML = `<span class="line-number">${lineObj.line}</span>${coloredCode}`;
+                codeDisplay.appendChild(div);
+            });
+        }
+
+        function startVisualization() {
+            inputString = document.getElementById('stringInput').value.trim();
+
+            if (!inputString || !/^[a-z]+$/.test(inputString)) {
+                alert('Please enter a valid string with lowercase letters only!');
+                return;
+            }
+
+            generateSteps();
+            currentStep = 0;
+            document.getElementById('visualizationArea').style.display = 'block';
+            renderStep();
+        }
+
+        function generateSteps() {
+            steps = [];
+
+            // Count frequencies
+            const freq = {};
+            for (let char of inputString) {
+                freq[char] = (freq[char] || 0) + 1;
+            }
+
+            const n = inputString.length;
+
+            steps.push({
+                freq: {...freq},
+                n: n,
+                heap: [],
+                res: [],
+                action: 'count_freq',
+                codeLines: ['count_freq', 'init'],
+                explanation: `Counted character frequencies: ${JSON.stringify(freq)}. String length n = ${n}`
+            });
+
+            // Feasibility check
+            const maxFreq = Math.max(...Object.values(freq));
+            const threshold = Math.floor((n + 1) / 2);
+
+            steps.push({
+                freq: {...freq},
+                n: n,
+                maxFreq: maxFreq,
+                threshold: threshold,
+                heap: [],
+                res: [],
+                action: 'feasibility_check',
+                codeLines: ['feasibility_check'],
+                explanation: `Feasibility check: max frequency ${maxFreq} > (${n} + 1) // 2 = ${threshold}? ${maxFreq > threshold}`
+            });
+
+            if (maxFreq > threshold) {
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: [],
+                    res: [],
+                    action: 'return_empty',
+                    codeLines: ['return_empty'],
+                    explanation: `Impossible to reorganize! The most frequent character appears too many times. Returning empty string.`
+                });
+                return;
+            }
+
+            // Build heap
+            let heap = Object.entries(freq).map(([char, count]) => [-count, char]);
+            
+            steps.push({
+                freq: {...freq},
+                n: n,
+                heap: heap.map(h => [...h]),
+                res: [],
+                action: 'build_heap',
+                codeLines: ['build_heap', 'heapify'],
+                explanation: `Built max heap with negative counts for min heap behavior: ${JSON.stringify(heap)}`
+            });
+
+            // Sort to simulate heap
+            heap.sort((a, b) => a[0] - b[0]);
+
+            let res = [];
+
+            // Main loop
+            while (heap.length >= 2) {
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: heap.map(h => [...h]),
+                    res: [...res],
+                    action: 'while_check',
+                    codeLines: ['while_check'],
+                    explanation: `Checking while condition: len(heap) = ${heap.length} >= 2? ${heap.length >= 2}`
+                });
+
+                // Pop first (most frequent)
+                const [c1, ch1] = heap.shift();
+                
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: heap.map(h => [...h]),
+                    res: [...res],
+                    c1: c1,
+                    ch1: ch1,
+                    action: 'pop_first',
+                    codeLines: ['pop_first'],
+                    explanation: `Popped first: c1=${c1}, ch1='${ch1}' (frequency: ${-c1})`
+                });
+
+                // Pop second (second most frequent)
+                const [c2, ch2] = heap.shift();
+                
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: heap.map(h => [...h]),
+                    res: [...res],
+                    c1: c1,
+                    ch1: ch1,
+                    c2: c2,
+                    ch2: ch2,
+                    action: 'pop_second',
+                    codeLines: ['pop_second'],
+                    explanation: `Popped second: c2=${c2}, ch2='${ch2}' (frequency: ${-c2})`
+                });
+
+                // Append first char
+                res.push(ch1);
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: heap.map(h => [...h]),
+                    res: [...res],
+                    c1: c1,
+                    ch1: ch1,
+                    c2: c2,
+                    ch2: ch2,
+                    action: 'append_first',
+                    codeLines: ['append_first'],
+                    explanation: `Appended '${ch1}' to result. Result: "${res.join('')}"`
+                });
+
+                // Append second char
+                res.push(ch2);
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: heap.map(h => [...h]),
+                    res: [...res],
+                    c1: c1,
+                    ch1: ch1,
+                    c2: c2,
+                    ch2: ch2,
+                    action: 'append_second',
+                    codeLines: ['append_second'],
+                    explanation: `Appended '${ch2}' to result. Result: "${res.join('')}"`
+                });
+
+                // Check and push back first if still has occurrences
+                if (c1 + 1 < 0) {
+                    steps.push({
+                        freq: {...freq},
+                        n: n,
+                        heap: heap.map(h => [...h]),
+                        res: [...res],
+                        c1: c1,
+                        ch1: ch1,
+                        action: 'check_first',
+                        codeLines: ['check_first'],
+                        explanation: `Checking if '${ch1}' has remaining occurrences: ${c1} + 1 = ${c1 + 1} < 0? ${c1 + 1 < 0}`
+                    });
+
+                    heap.push([c1 + 1, ch1]);
+                    heap.sort((a, b) => a[0] - b[0]);
+                    
+                    steps.push({
+                        freq: {...freq},
+                        n: n,
+                        heap: heap.map(h => [...h]),
+                        res: [...res],
+                        action: 'push_first',
+                        codeLines: ['push_first'],
+                        explanation: `Pushed '${ch1}' back to heap with count ${c1 + 1} (${-(c1 + 1)} occurrences remaining)`
+                    });
+                } else {
+                    steps.push({
+                        freq: {...freq},
+                        n: n,
+                        heap: heap.map(h => [...h]),
+                        res: [...res],
+                        c1: c1,
+                        ch1: ch1,
+                        action: 'check_first',
+                        codeLines: ['check_first'],
+                        explanation: `Checking if '${ch1}' has remaining occurrences: ${c1} + 1 = ${c1 + 1} < 0? ${c1 + 1 < 0}. No more occurrences.`
+                    });
+                }
+
+                // Check and push back second if still has occurrences
+                if (c2 + 1 < 0) {
+                    steps.push({
+                        freq: {...freq},
+                        n: n,
+                        heap: heap.map(h => [...h]),
+                        res: [...res],
+                        c2: c2,
+                        ch2: ch2,
+                        action: 'check_second',
+                        codeLines: ['check_second'],
+                        explanation: `Checking if '${ch2}' has remaining occurrences: ${c2} + 1 = ${c2 + 1} < 0? ${c2 + 1 < 0}`
+                    });
+
+                    heap.push([c2 + 1, ch2]);
+                    heap.sort((a, b) => a[0] - b[0]);
+                    
+                    steps.push({
+                        freq: {...freq},
+                        n: n,
+                        heap: heap.map(h => [...h]),
+                        res: [...res],
+                        action: 'push_second',
+                        codeLines: ['push_second'],
+                        explanation: `Pushed '${ch2}' back to heap with count ${c2 + 1} (${-(c2 + 1)} occurrences remaining)`
+                    });
+                } else {
+                    steps.push({
+                        freq: {...freq},
+                        n: n,
+                        heap: heap.map(h => [...h]),
+                        res: [...res],
+                        c2: c2,
+                        ch2: ch2,
+                        action: 'check_second',
+                        codeLines: ['check_second'],
+                        explanation: `Checking if '${ch2}' has remaining occurrences: ${c2} + 1 = ${c2 + 1} < 0? ${c2 + 1 < 0}. No more occurrences.`
+                    });
+                }
+            }
+
+            // Check for remaining character
+            steps.push({
+                freq: {...freq},
+                n: n,
+                heap: heap.map(h => [...h]),
+                res: [...res],
+                action: 'check_remaining',
+                codeLines: ['check_remaining'],
+                explanation: `Checking if heap has remaining character: len(heap) = ${heap.length} > 0? ${heap.length > 0}`
+            });
+
+            if (heap.length > 0) {
+                res.push(heap[0][1]);
+                steps.push({
+                    freq: {...freq},
+                    n: n,
+                    heap: heap.map(h => [...h]),
+                    res: [...res],
+                    action: 'append_last',
+                    codeLines: ['append_last'],
+                    explanation: `Appended last character '${heap[0][1]}' to result. Result: "${res.join('')}"`
+                });
+            }
+
+            // Return result
+            steps.push({
+                freq: {...freq},
+                n: n,
+                heap: [],
+                res: [...res],
+                action: 'return_result',
+                codeLines: ['return_result'],
+                explanation: `Algorithm complete! Returning reorganized string: "${res.join('')}"`
+            });
+        }
+
+        function renderStep() {
+            const step = steps[currentStep];
+            
+            document.getElementById('prevBtn').disabled = currentStep === 0;
+            document.getElementById('nextBtn').disabled = currentStep === steps.length - 1;
+
+            renderCode(step.codeLines || []);
+            document.getElementById('explanationText').textContent = step.explanation;
+
+            // Status box
+            const statusBox = document.getElementById('statusBox');
+            if (step.action === 'return_empty') {
+                statusBox.innerHTML = `
+                    <div class="warning-box">
+                        <div class="warning-title">❌ Impossible to Reorganize</div>
+                        <div class="warning-text">The most frequent character appears ${step.maxFreq} times, which exceeds the threshold of ${step.threshold}. Cannot reorganize without adjacent duplicates.</div>
+                    </div>
+                `;
+            } else if (step.action === 'return_result') {
+                statusBox.innerHTML = `
+                    <div class="success-box">
+                        <div class="success-title">✅ Successfully Reorganized!</div>
+                        <div class="success-text">The string has been reorganized to: "${step.res.join('')}" with no adjacent duplicates.</div>
+                    </div>
+                `;
+            } else {
+                statusBox.innerHTML = '';
+            }
+
+            // Variables
+            const variablesGrid = document.getElementById('variablesGrid');
+            variablesGrid.innerHTML = `
+                <div class="variable">
+                    <div class="variable-name">n (length)</div>
+                    <div class="variable-value">${step.n || 'N/A'}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">heap size</div>
+                    <div class="variable-value">${step.heap ? step.heap.length : 0}</div>
+                </div>
+                <div class="variable">
+                    <div class="variable-name">result length</div>
+                    <div class="variable-value">${step.res ? step.res.length : 0}</div>
+                </div>
+            `;
+
+            if (step.c1 !== undefined) {
+                variablesGrid.innerHTML += `
+                    <div class="variable">
+                        <div class="variable-name">c1, ch1</div>
+                        <div class="variable-value">${step.c1}, '${step.ch1}'</div>
+                    </div>
+                `;
+            }
+
+            if (step.c2 !== undefined) {
+                variablesGrid.innerHTML += `
+                    <div class="variable">
+                        <div class="variable-name">c2, ch2</div>
+                        <div class="variable-value">${step.c2}, '${step.ch2}'</div>
+                    </div>
+                `;
+            }
+
+            if (step.maxFreq !== undefined) {
+                variablesGrid.innerHTML += `
+                    <div class="variable">
+                        <div class="variable-name">max frequency</div>
+                        <div class="variable-value">${step.maxFreq}</div>
+                    </div>
+                    <div class="variable">
+                        <div class="variable-name">threshold</div>
+                        <div class="variable-value">${step.threshold}</div>
+                    </div>
+                `;
+            }
+
+            // Frequencies
+            renderFrequencies(step);
+
+            // Heap
+            renderHeap(step);
+
+            // Result
+            renderResult(step);
+        }
+
+        function renderFrequencies(step) {
+            const freqDisplay = document.getElementById('freqDisplay');
+            freqDisplay.innerHTML = '';
+
+            if (!step.freq || Object.keys(step.freq).length === 0) {
+                freqDisplay.innerHTML = '<div class="empty-state">No frequencies yet</div>';
+                return;
+            }
+
+            Object.entries(step.freq).sort((a, b) => b[1] - a[1]).forEach(([char, count]) => {
+                const div = document.createElement('div');
+                div.className = 'freq-item';
+                div.innerHTML = `
+                    <div class="freq-char">${char}</div>
+                    <div class="freq-count">× ${count}</div>
+                `;
+                freqDisplay.appendChild(div);
+            });
+        }
+
+        function renderHeap(step) {
+            const heapDisplay = document.getElementById('heapDisplay');
+            heapDisplay.innerHTML = '';
+
+            if (!step.heap || step.heap.length === 0) {
+                heapDisplay.innerHTML = '<div class="empty-state">Heap is empty</div>';
+                return;
+            }
+
+            step.heap.forEach(([count, char], idx) => {
+                const div = document.createElement('div');
+                div.className = 'heap-item';
+                
+                if (idx === 0) {
+                    div.classList.add('top');
+                }
+
+                if ((step.action === 'pop_first' && char === step.ch1) ||
+                    (step.action === 'pop_second' && char === step.ch2)) {
+                    div.classList.add('popped');
+                }
+
+                div.innerHTML = `
+                    <div class="heap-char">${char}</div>
+                    <div class="heap-count">freq: ${-count}</div>
+                `;
+                heapDisplay.appendChild(div);
+            });
+        }
+
+        function renderResult(step) {
+            const resultDisplay = document.getElementById('resultDisplay');
+            resultDisplay.innerHTML = '';
+
+            if (!step.res || step.res.length === 0) {
+                resultDisplay.innerHTML = '<div class="empty-state">No result yet</div>';
+                return;
+            }
+
+            step.res.forEach((char, idx) => {
+                const div = document.createElement('div');
+                div.className = 'result-char';
+                div.textContent = char;
+                resultDisplay.appendChild(div);
+            });
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep();
+            }
+        }
+
+        function resetVisualization() {
+            currentStep = 0;
+            renderStep();
+        }
+    </script>
+</body>
+</html>
