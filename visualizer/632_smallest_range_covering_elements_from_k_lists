@@ -1,0 +1,751 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Play, RotateCcw } from 'lucide-react';
+
+export default function AlgorithmVisualizer() {
+  const [inputNums, setInputNums] = useState('[[4,10,15,24,26],[0,9,12,20],[5,18,22,30]]');
+  const [steps, setSteps] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState('');
+
+  // Simulate algorithm execution and capture all steps
+  const simulateAlgorithm = (numsStr) => {
+    try {
+      const nums = JSON.parse(numsStr);
+      if (!Array.isArray(nums) || nums.length === 0) {
+        throw new Error('Input must be a non-empty array');
+      }
+
+      const executionSteps = [];
+      
+      // Step 1: Initialize
+      executionSteps.push({
+        line: 7,
+        description: 'Initialize empty heap and curr_max',
+        variables: {
+          heap: [],
+          curr_max: '-∞',
+          best_l: null,
+          best_r: null,
+          nums: nums
+        }
+      });
+
+      let heap = [];
+      let curr_max = -Infinity;
+
+      // Step 2: Build initial heap
+      for (let r = 0; r < nums.length; r++) {
+        executionSteps.push({
+          line: 10,
+          description: `Loop iteration: r = ${r}`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max === -Infinity ? '-∞' : curr_max,
+            r: r,
+            best_l: null,
+            best_r: null,
+            nums: nums
+          }
+        });
+        
+        const val = nums[r][0];
+        executionSteps.push({
+          line: 11,
+          description: `Get first element from list ${r}: val = ${val}`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max === -Infinity ? '-∞' : curr_max,
+            r: r,
+            val: val,
+            best_l: null,
+            best_r: null,
+            nums: nums
+          }
+        });
+        
+        heap.push([val, r, 0]);
+        executionSteps.push({
+          line: 12,
+          description: `Append (${val}, ${r}, 0) to heap`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max === -Infinity ? '-∞' : curr_max,
+            r: r,
+            val: val,
+            best_l: null,
+            best_r: null,
+            nums: nums
+          }
+        });
+        
+        const oldMax = curr_max;
+        curr_max = Math.max(curr_max, val);
+        
+        executionSteps.push({
+          line: 13,
+          description: `Update curr_max: ${curr_max === -Infinity ? '-∞' : oldMax} → ${curr_max}`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max,
+            r: r,
+            val: val,
+            best_l: null,
+            best_r: null,
+            nums: nums
+          }
+        });
+      }
+
+      // Step 3: Heapify
+      heap.sort((a, b) => a[0] - b[0]);
+      executionSteps.push({
+        line: 15,
+        description: 'Heapify the initial heap',
+        variables: {
+          heap: [...heap],
+          curr_max: curr_max,
+          best_l: null,
+          best_r: null,
+          nums: nums
+        }
+      });
+
+      // Step 4: Initialize best range
+      let best_l = heap[0][0];
+      let best_r = curr_max;
+      
+      executionSteps.push({
+        line: 16,
+        description: `Initialize best range: [${best_l}, ${best_r}]`,
+        variables: {
+          heap: [...heap],
+          curr_max: curr_max,
+          best_l: best_l,
+          best_r: best_r,
+          nums: nums
+        }
+      });
+
+      // Main loop
+      let iteration = 0;
+      while (true) {
+        iteration++;
+        
+        // Pop minimum
+        const [curr_min, r, c] = heap.shift();
+        heap.sort((a, b) => a[0] - b[0]);
+        
+        executionSteps.push({
+          line: 19,
+          description: `Pop min from heap: value=${curr_min}, list=${r}, index=${c}`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max,
+            curr_min: curr_min,
+            r: r,
+            c: c,
+            best_l: best_l,
+            best_r: best_r,
+            nums: nums
+          }
+        });
+
+        // Check if better range
+        const currentRange = curr_max - curr_min;
+        const bestRange = best_r - best_l;
+        
+        executionSteps.push({
+          line: 20,
+          description: `Check if (${currentRange} < ${bestRange}) or (${currentRange} == ${bestRange} and ${curr_min} < ${best_l})`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max,
+            curr_min: curr_min,
+            r: r,
+            c: c,
+            best_l: best_l,
+            best_r: best_r,
+            nums: nums
+          }
+        });
+        
+        if (currentRange < bestRange || (currentRange === bestRange && curr_min < best_l)) {
+          best_l = curr_min;
+          best_r = curr_max;
+          
+          executionSteps.push({
+            line: 22,
+            description: `Condition TRUE → Update best range: [${best_l}, ${best_r}] (width: ${best_r - best_l})`,
+            variables: {
+              heap: [...heap],
+              curr_max: curr_max,
+              curr_min: curr_min,
+              r: r,
+              c: c,
+              best_l: best_l,
+              best_r: best_r,
+              nums: nums
+            }
+          });
+        } else {
+          executionSteps.push({
+            line: 20,
+            description: `Condition FALSE → Keep best range: [${best_l}, ${best_r}]`,
+            variables: {
+              heap: [...heap],
+              curr_max: curr_max,
+              curr_min: curr_min,
+              r: r,
+              c: c,
+              best_l: best_l,
+              best_r: best_r,
+              nums: nums
+            }
+          });
+        }
+
+        // Check if we've exhausted a list
+        if (c + 1 === nums[r].length) {
+          executionSteps.push({
+            line: 24,
+            description: `Check: c + 1 (${c + 1}) == len(nums[${r}]) (${nums[r].length}) → TRUE, breaking`,
+            variables: {
+              heap: [...heap],
+              curr_max: curr_max,
+              curr_min: curr_min,
+              r: r,
+              c: c,
+              best_l: best_l,
+              best_r: best_r,
+              nums: nums
+            }
+          });
+          
+          executionSteps.push({
+            line: 25,
+            description: `List ${r} exhausted, breaking out of loop`,
+            variables: {
+              heap: [...heap],
+              curr_max: curr_max,
+              curr_min: curr_min,
+              r: r,
+              c: c,
+              best_l: best_l,
+              best_r: best_r,
+              nums: nums,
+              result: [best_l, best_r]
+            }
+          });
+          break;
+        }
+        
+        // Condition was false, continue to next element
+        executionSteps.push({
+          line: 24,
+          description: `Check: c + 1 (${c + 1}) == len(nums[${r}]) (${nums[r].length}) → FALSE, continue`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max,
+            curr_min: curr_min,
+            r: r,
+            c: c,
+            best_l: best_l,
+            best_r: best_r,
+            nums: nums
+          }
+        });
+
+        // Push next element
+        const nxt = nums[r][c + 1];
+        executionSteps.push({
+          line: 26,
+          description: `Get next element from list ${r}: nxt = ${nxt}`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max,
+            nxt: nxt,
+            r: r,
+            c: c,
+            best_l: best_l,
+            best_r: best_r,
+            nums: nums
+          }
+        });
+        
+        heap.push([nxt, r, c + 1]);
+        heap.sort((a, b) => a[0] - b[0]);
+        
+        executionSteps.push({
+          line: 27,
+          description: `Push (${nxt}, ${r}, ${c + 1}) to heap`,
+          variables: {
+            heap: [...heap],
+            curr_max: curr_max,
+            nxt: nxt,
+            r: r,
+            c: c + 1,
+            best_l: best_l,
+            best_r: best_r,
+            nums: nums
+          }
+        });
+        
+        const oldMax = curr_max;
+        if (nxt > curr_max) {
+          curr_max = nxt;
+          executionSteps.push({
+            line: 29,
+            description: `Check: nxt (${nxt}) > curr_max (${oldMax}) → TRUE, update curr_max to ${curr_max}`,
+            variables: {
+              heap: [...heap],
+              curr_max: curr_max,
+              nxt: nxt,
+              r: r,
+              c: c + 1,
+              best_l: best_l,
+              best_r: best_r,
+              nums: nums
+            }
+          });
+        } else {
+          executionSteps.push({
+            line: 29,
+            description: `Check: nxt (${nxt}) > curr_max (${curr_max}) → FALSE, curr_max unchanged`,
+            variables: {
+              heap: [...heap],
+              curr_max: curr_max,
+              nxt: nxt,
+              r: r,
+              c: c + 1,
+              best_l: best_l,
+              best_r: best_r,
+              nums: nums
+            }
+          });
+        }
+
+        if (iteration > 100) break; // Safety limit
+      }
+
+      // Final result
+      executionSteps.push({
+        line: 32,
+        description: `Return result: [${best_l}, ${best_r}]`,
+        variables: {
+          heap: [],
+          curr_max: curr_max,
+          best_l: best_l,
+          best_r: best_r,
+          result: [best_l, best_r],
+          nums: nums
+        }
+      });
+
+      return executionSteps;
+    } catch (e) {
+      throw new Error(`Invalid input: ${e.message}`);
+    }
+  };
+
+  // Initialize on mount
+  useEffect(() => {
+    try {
+      const newSteps = simulateAlgorithm(inputNums);
+      setSteps(newSteps);
+      setCurrentStep(0);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
+
+  const handleRun = () => {
+    try {
+      const newSteps = simulateAlgorithm(inputNums);
+      setSteps(newSteps);
+      setCurrentStep(0);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
+  };
+
+  const handleReset = () => {
+    setCurrentStep(0);
+  };
+
+  const currentState = steps[currentStep] || { variables: {}, description: '', line: 0 };
+
+  const codeLines = [
+    'class Solution(object):',
+    '    def smallestRange(self, nums):',
+    '        """',
+    '        :type nums: List[List[int]]',
+    '        :rtype: List[int]',
+    '        """',
+    '        heap = []',
+    '        curr_max = float("-inf")',
+    '',
+    '        for r in range(len(nums)):',
+    '            val = nums[r][0]',
+    '            heap.append((val, r, 0))',
+    '            curr_max = max(curr_max, val)',
+    '',
+    '        heapq.heapify(heap)',
+    '        best_l, best_r = heap[0][0], curr_max',
+    '',
+    '        while True:',
+    '            curr_min, r, c = heapq.heappop(heap)',
+    '            if(curr_max - curr_min < best_r - best_l) or (',
+    '                curr_max - curr_min == best_r - best_l and curr_min < best_l):',
+    '                best_l, best_r = curr_min, curr_max',
+    '',
+    '            if c + 1 == len(nums[r]):',
+    '                break',
+    '            nxt = nums[r][c + 1]',
+    '            heapq.heappush(heap, (nxt, r, c + 1))',
+    '',
+    '            if nxt > curr_max:',
+    '                curr_max = nxt',
+    '',
+    '        return [best_l, best_r]'
+  ];
+
+  const formatValue = (val) => {
+    if (val === null || val === undefined) return 'null';
+    if (val === Infinity) return '∞';
+    if (val === -Infinity) return '-∞';
+    if (Array.isArray(val)) {
+      if (val.length === 0) return '[]';
+      if (Array.isArray(val[0])) {
+        return '[' + val.map(v => `(${v.join(', ')})`).join(', ') + ']';
+      }
+      return JSON.stringify(val);
+    }
+    return String(val);
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%)',
+      color: '#e0e6f0',
+      fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+      padding: '2rem'
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+        
+        .glow-text {
+          text-shadow: 0 0 10px rgba(100, 200, 255, 0.5);
+        }
+        
+        .code-line {
+          transition: all 0.3s ease;
+          padding: 0.25rem 1rem;
+          border-left: 3px solid transparent;
+        }
+        
+        .code-line:hover {
+          background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .code-line-active {
+          background: rgba(100, 200, 255, 0.15) !important;
+          border-left-color: #64c8ff !important;
+          animation: pulse 0.5s ease;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        
+        .var-card {
+          background: rgba(30, 35, 55, 0.6);
+          border: 1px solid rgba(100, 200, 255, 0.2);
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          margin-bottom: 0.75rem;
+          transition: all 0.3s ease;
+        }
+        
+        .var-card:hover {
+          border-color: rgba(100, 200, 255, 0.4);
+          transform: translateX(4px);
+        }
+        
+        .btn {
+          background: linear-gradient(135deg, #2a5298 0%, #1e3a6b 100%);
+          border: 1px solid rgba(100, 200, 255, 0.3);
+          color: #e0e6f0;
+          padding: 0.75rem 1.5rem;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-family: inherit;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .btn:hover:not(:disabled) {
+          background: linear-gradient(135deg, #3a62a8 0%, #2e4a7b 100%);
+          border-color: rgba(100, 200, 255, 0.5);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(100, 200, 255, 0.2);
+        }
+        
+        .btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        
+        .input-field {
+          background: rgba(20, 25, 45, 0.8);
+          border: 1px solid rgba(100, 200, 255, 0.3);
+          color: #e0e6f0;
+          padding: 0.75rem;
+          border-radius: 6px;
+          font-family: inherit;
+          font-size: 0.9rem;
+          width: 100%;
+          transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+          outline: none;
+          border-color: rgba(100, 200, 255, 0.6);
+          box-shadow: 0 0 0 3px rgba(100, 200, 255, 0.1);
+        }
+      `}</style>
+
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+          <h1 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: 700, 
+            marginBottom: '0.5rem',
+            background: 'linear-gradient(135deg, #64c8ff 0%, #9d7aff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Algorithm Visualizer
+          </h1>
+          <p style={{ color: '#8b92a8', fontSize: '1rem' }}>
+            smallestRange - Step-by-step execution
+          </p>
+        </div>
+
+        {/* Input Section */}
+        <div style={{ 
+          background: 'rgba(30, 35, 55, 0.4)', 
+          border: '1px solid rgba(100, 200, 255, 0.2)',
+          borderRadius: '12px',
+          padding: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '0.75rem', 
+            fontWeight: 600,
+            color: '#64c8ff'
+          }}>
+            Input Array:
+          </label>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+            <input
+              type="text"
+              className="input-field"
+              value={inputNums}
+              onChange={(e) => setInputNums(e.target.value)}
+              placeholder='[[4,10,15,24,26],[0,9,12,20],[5,18,22,30]]'
+            />
+            <button className="btn" onClick={handleRun}>
+              <Play size={18} />
+              Run
+            </button>
+          </div>
+          {error && (
+            <div style={{ 
+              color: '#ff6b6b', 
+              marginTop: '0.75rem',
+              padding: '0.5rem',
+              background: 'rgba(255, 107, 107, 0.1)',
+              borderRadius: '4px',
+              fontSize: '0.9rem'
+            }}>
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '1rem',
+          marginBottom: '2rem',
+          flexWrap: 'wrap'
+        }}>
+          <button className="btn" onClick={handlePrev} disabled={currentStep === 0}>
+            <ChevronLeft size={18} />
+            Previous
+          </button>
+          <div style={{
+            background: 'rgba(30, 35, 55, 0.6)',
+            border: '1px solid rgba(100, 200, 255, 0.3)',
+            borderRadius: '6px',
+            padding: '0.75rem 1.5rem',
+            fontWeight: 600,
+            color: '#64c8ff'
+          }}>
+            Step {currentStep + 1} / {steps.length}
+          </div>
+          <button className="btn" onClick={handleNext} disabled={currentStep === steps.length - 1}>
+            Next
+            <ChevronRight size={18} />
+          </button>
+          <button className="btn" onClick={handleReset}>
+            <RotateCcw size={18} />
+            Reset
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '2rem' }}>
+          {/* Left: Variables */}
+          <div>
+            <div style={{ 
+              background: 'rgba(30, 35, 55, 0.4)',
+              border: '1px solid rgba(100, 200, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              height: 'fit-content',
+              position: 'sticky',
+              top: '2rem'
+            }}>
+              <h2 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 700, 
+                marginBottom: '1rem',
+                color: '#64c8ff'
+              }}>
+                State Variables
+              </h2>
+
+              {/* Current Action */}
+              {currentState.description && (
+                <div style={{
+                  background: 'rgba(157, 122, 255, 0.15)',
+                  border: '1px solid rgba(157, 122, 255, 0.3)',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginBottom: '1.5rem',
+                  fontSize: '0.9rem',
+                  lineHeight: '1.5'
+                }}>
+                  <div style={{ 
+                    color: '#9d7aff', 
+                    fontWeight: 600, 
+                    marginBottom: '0.5rem',
+                    fontSize: '0.85rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Current Action
+                  </div>
+                  {currentState.description}
+                </div>
+              )}
+
+              {/* Variables */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {Object.entries(currentState.variables || {}).map(([key, value]) => (
+                  <div key={key} className="var-card">
+                    <div style={{ 
+                      color: '#64c8ff', 
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      marginBottom: '0.25rem'
+                    }}>
+                      {key}
+                    </div>
+                    <div style={{ 
+                      color: '#b8c1d8',
+                      fontSize: '0.9rem',
+                      wordBreak: 'break-all'
+                    }}>
+                      {formatValue(value)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Code */}
+          <div>
+            <div style={{ 
+              background: 'rgba(20, 25, 45, 0.8)',
+              border: '1px solid rgba(100, 200, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              overflow: 'auto'
+            }}>
+              <h2 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 700, 
+                marginBottom: '1rem',
+                color: '#64c8ff'
+              }}>
+                Code Execution
+              </h2>
+              <div style={{ 
+                background: 'rgba(10, 14, 30, 0.6)',
+                borderRadius: '8px',
+                padding: '1rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.6',
+                overflow: 'auto'
+              }}>
+                {codeLines.map((line, idx) => (
+                  <div
+                    key={idx}
+                    className={`code-line ${idx + 1 === currentState.line ? 'code-line-active' : ''}`}
+                    style={{
+                      color: idx + 1 === currentState.line ? '#64c8ff' : '#8b92a8',
+                      fontWeight: idx + 1 === currentState.line ? 600 : 400,
+                      whiteSpace: 'pre'
+                    }}
+                  >
+                    <span style={{ 
+                      display: 'inline-block', 
+                      width: '2rem',
+                      color: 'rgba(139, 146, 168, 0.5)',
+                      userSelect: 'none'
+                    }}>
+                      {idx + 1}
+                    </span>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
