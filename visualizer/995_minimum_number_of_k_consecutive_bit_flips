@@ -1,0 +1,654 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Play, RotateCcw } from 'lucide-react';
+
+export default function MinKBitFlipsVisualizer() {
+  const [inputNums, setInputNums] = useState('[0,1,0]');
+  const [inputK, setInputK] = useState('1');
+  const [steps, setSteps] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState('');
+
+  // Simulate algorithm execution and capture all steps
+  const simulateAlgorithm = (numsStr, kStr) => {
+    try {
+      const nums = JSON.parse(numsStr);
+      const k = parseInt(kStr);
+      
+      if (!Array.isArray(nums) || nums.length === 0) {
+        throw new Error('nums must be a non-empty array');
+      }
+      if (isNaN(k) || k <= 0) {
+        throw new Error('k must be a positive integer');
+      }
+
+      const executionSteps = [];
+      const n = nums.length;
+      
+      // Step 1: Initialize variables
+      executionSteps.push({
+        line: 3,
+        description: `Initialize: n = ${n}`,
+        variables: {
+          nums: [...nums],
+          k: k,
+          n: n,
+          diff: null,
+          flipParity: null,
+          ans: null
+        }
+      });
+
+      const diff = new Array(n + 1).fill(0);
+      executionSteps.push({
+        line: 4,
+        description: `Create diff array of size ${n + 1}, all zeros`,
+        variables: {
+          nums: [...nums],
+          k: k,
+          n: n,
+          diff: [...diff],
+          flipParity: null,
+          ans: null
+        }
+      });
+
+      let flipParity = 0;
+      executionSteps.push({
+        line: 5,
+        description: 'Initialize flipParity = 0',
+        variables: {
+          nums: [...nums],
+          k: k,
+          n: n,
+          diff: [...diff],
+          flipParity: flipParity,
+          ans: null
+        }
+      });
+
+      let ans = 0;
+      executionSteps.push({
+        line: 6,
+        description: 'Initialize ans = 0',
+        variables: {
+          nums: [...nums],
+          k: k,
+          n: n,
+          diff: [...diff],
+          flipParity: flipParity,
+          ans: ans
+        }
+      });
+
+      // Main loop
+      for (let i = 0; i < n; i++) {
+        executionSteps.push({
+          line: 8,
+          description: `Loop iteration: i = ${i}`,
+          variables: {
+            nums: [...nums],
+            k: k,
+            n: n,
+            diff: [...diff],
+            flipParity: flipParity,
+            ans: ans,
+            i: i
+          }
+        });
+
+        const oldFlipParity = flipParity;
+        flipParity ^= diff[i];
+        executionSteps.push({
+          line: 9,
+          description: `flipParity ^= diff[${i}]: ${oldFlipParity} XOR ${diff[i]} = ${flipParity}`,
+          variables: {
+            nums: [...nums],
+            k: k,
+            n: n,
+            diff: [...diff],
+            flipParity: flipParity,
+            ans: ans,
+            i: i
+          }
+        });
+
+        const bit = nums[i] ^ flipParity;
+        executionSteps.push({
+          line: 11,
+          description: `Calculate bit: nums[${i}] XOR flipParity = ${nums[i]} XOR ${flipParity} = ${bit}`,
+          variables: {
+            nums: [...nums],
+            k: k,
+            n: n,
+            diff: [...diff],
+            flipParity: flipParity,
+            ans: ans,
+            i: i,
+            bit: bit
+          }
+        });
+
+        executionSteps.push({
+          line: 13,
+          description: `Check if bit == 0: ${bit} == 0 → ${bit === 0 ? 'TRUE' : 'FALSE'}`,
+          variables: {
+            nums: [...nums],
+            k: k,
+            n: n,
+            diff: [...diff],
+            flipParity: flipParity,
+            ans: ans,
+            i: i,
+            bit: bit
+          }
+        });
+
+        if (bit === 0) {
+          executionSteps.push({
+            line: 14,
+            description: `Check if i + k > n: ${i} + ${k} > ${n} → ${i + k} > ${n} → ${i + k > n ? 'TRUE' : 'FALSE'}`,
+            variables: {
+              nums: [...nums],
+              k: k,
+              n: n,
+              diff: [...diff],
+              flipParity: flipParity,
+              ans: ans,
+              i: i,
+              bit: bit
+            }
+          });
+
+          if (i + k > n) {
+            executionSteps.push({
+              line: 15,
+              description: `Cannot flip k bits from position ${i}, return -1`,
+              variables: {
+                nums: [...nums],
+                k: k,
+                n: n,
+                diff: [...diff],
+                flipParity: flipParity,
+                ans: ans,
+                i: i,
+                bit: bit,
+                result: -1
+              }
+            });
+            
+            return executionSteps;
+          }
+
+          ans += 1;
+          executionSteps.push({
+            line: 16,
+            description: `Increment ans: ${ans - 1} + 1 = ${ans}`,
+            variables: {
+              nums: [...nums],
+              k: k,
+              n: n,
+              diff: [...diff],
+              flipParity: flipParity,
+              ans: ans,
+              i: i,
+              bit: bit
+            }
+          });
+
+          const oldFlipParity2 = flipParity;
+          flipParity ^= 1;
+          executionSteps.push({
+            line: 17,
+            description: `flipParity ^= 1: ${oldFlipParity2} XOR 1 = ${flipParity}`,
+            variables: {
+              nums: [...nums],
+              k: k,
+              n: n,
+              diff: [...diff],
+              flipParity: flipParity,
+              ans: ans,
+              i: i,
+              bit: bit
+            }
+          });
+
+          const oldDiff = diff[i + k];
+          diff[i + k] ^= 1;
+          executionSteps.push({
+            line: 18,
+            description: `diff[${i + k}] ^= 1: ${oldDiff} XOR 1 = ${diff[i + k]}`,
+            variables: {
+              nums: [...nums],
+              k: k,
+              n: n,
+              diff: [...diff],
+              flipParity: flipParity,
+              ans: ans,
+              i: i,
+              bit: bit
+            }
+          });
+        }
+      }
+
+      // Return result
+      executionSteps.push({
+        line: 20,
+        description: `Return ans: ${ans}`,
+        variables: {
+          nums: [...nums],
+          k: k,
+          n: n,
+          diff: [...diff],
+          flipParity: flipParity,
+          ans: ans,
+          result: ans
+        }
+      });
+
+      return executionSteps;
+    } catch (e) {
+      throw new Error(`Invalid input: ${e.message}`);
+    }
+  };
+
+  // Initialize on mount
+  useEffect(() => {
+    try {
+      const newSteps = simulateAlgorithm(inputNums, inputK);
+      setSteps(newSteps);
+      setCurrentStep(0);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    }
+  }, []);
+
+  const handleRun = () => {
+    try {
+      const newSteps = simulateAlgorithm(inputNums, inputK);
+      setSteps(newSteps);
+      setCurrentStep(0);
+      setError('');
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) setCurrentStep(currentStep + 1);
+  };
+
+  const handleReset = () => {
+    setCurrentStep(0);
+  };
+
+  const currentState = steps[currentStep] || { variables: {}, description: '', line: 0 };
+
+  const codeLines = [
+    'class Solution:',
+    '    def minKBitFlips(self, nums: List[int], k: int) -> int:',
+    '        n = len(nums)',
+    '        diff = [0] * (n + 1)',
+    '        flipParity = 0',
+    '        ans = 0',
+    '',
+    '        for i in range(n):',
+    '            flipParity ^= diff[i]',
+    '',
+    '            bit = nums[i] ^ flipParity',
+    '',
+    '            if bit == 0:',
+    '                if i + k > n:',
+    '                    return -1',
+    '                ans += 1',
+    '                flipParity ^= 1',
+    '                diff[i + k] ^= 1',
+    '',
+    '        return ans'
+  ];
+
+  const formatValue = (val) => {
+    if (val === null || val === undefined) return 'null';
+    if (Array.isArray(val)) {
+      return '[' + val.join(', ') + ']';
+    }
+    return String(val);
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%)',
+      color: '#e0e6f0',
+      fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+      padding: '2rem'
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+        
+        .code-line {
+          transition: all 0.3s ease;
+          padding: 0.25rem 1rem;
+          border-left: 3px solid transparent;
+        }
+        
+        .code-line:hover {
+          background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .code-line-active {
+          background: rgba(100, 200, 255, 0.15) !important;
+          border-left-color: #64c8ff !important;
+          animation: pulse 0.5s ease;
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        
+        .var-card {
+          background: rgba(30, 35, 55, 0.6);
+          border: 1px solid rgba(100, 200, 255, 0.2);
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          margin-bottom: 0.75rem;
+          transition: all 0.3s ease;
+        }
+        
+        .var-card:hover {
+          border-color: rgba(100, 200, 255, 0.4);
+          transform: translateX(4px);
+        }
+        
+        .btn {
+          background: linear-gradient(135deg, #2a5298 0%, #1e3a6b 100%);
+          border: 1px solid rgba(100, 200, 255, 0.3);
+          color: #e0e6f0;
+          padding: 0.75rem 1.5rem;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          font-family: inherit;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .btn:hover:not(:disabled) {
+          background: linear-gradient(135deg, #3a62a8 0%, #2e4a7b 100%);
+          border-color: rgba(100, 200, 255, 0.5);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(100, 200, 255, 0.2);
+        }
+        
+        .btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        
+        .input-field {
+          background: rgba(20, 25, 45, 0.8);
+          border: 1px solid rgba(100, 200, 255, 0.3);
+          color: #e0e6f0;
+          padding: 0.75rem;
+          border-radius: 6px;
+          font-family: inherit;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+          outline: none;
+          border-color: rgba(100, 200, 255, 0.6);
+          box-shadow: 0 0 0 3px rgba(100, 200, 255, 0.1);
+        }
+      `}</style>
+
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+          <h1 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: 700, 
+            marginBottom: '0.5rem',
+            background: 'linear-gradient(135deg, #64c8ff 0%, #9d7aff 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Algorithm Visualizer
+          </h1>
+          <p style={{ color: '#8b92a8', fontSize: '1rem' }}>
+            minKBitFlips - Step-by-step execution
+          </p>
+        </div>
+
+        {/* Input Section */}
+        <div style={{ 
+          background: 'rgba(30, 35, 55, 0.4)', 
+          border: '1px solid rgba(100, 200, 255, 0.2)',
+          borderRadius: '12px',
+          padding: '1.5rem',
+          marginBottom: '2rem'
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', marginBottom: '1rem' }}>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.75rem', 
+                fontWeight: 600,
+                color: '#64c8ff'
+              }}>
+                nums (array):
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={inputNums}
+                onChange={(e) => setInputNums(e.target.value)}
+                placeholder='[0,1,0]'
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '0.75rem', 
+                fontWeight: 600,
+                color: '#64c8ff'
+              }}>
+                k (int):
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={inputK}
+                onChange={(e) => setInputK(e.target.value)}
+                placeholder='1'
+                style={{ width: '120px' }}
+              />
+            </div>
+          </div>
+          <button className="btn" onClick={handleRun}>
+            <Play size={18} />
+            Run
+          </button>
+          {error && (
+            <div style={{ 
+              color: '#ff6b6b', 
+              marginTop: '0.75rem',
+              padding: '0.5rem',
+              background: 'rgba(255, 107, 107, 0.1)',
+              borderRadius: '4px',
+              fontSize: '0.9rem'
+            }}>
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '1rem',
+          marginBottom: '2rem',
+          flexWrap: 'wrap'
+        }}>
+          <button className="btn" onClick={handlePrev} disabled={currentStep === 0}>
+            <ChevronLeft size={18} />
+            Previous
+          </button>
+          <div style={{
+            background: 'rgba(30, 35, 55, 0.6)',
+            border: '1px solid rgba(100, 200, 255, 0.3)',
+            borderRadius: '6px',
+            padding: '0.75rem 1.5rem',
+            fontWeight: 600,
+            color: '#64c8ff'
+          }}>
+            Step {currentStep + 1} / {steps.length}
+          </div>
+          <button className="btn" onClick={handleNext} disabled={currentStep === steps.length - 1}>
+            Next
+            <ChevronRight size={18} />
+          </button>
+          <button className="btn" onClick={handleReset}>
+            <RotateCcw size={18} />
+            Reset
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '2rem' }}>
+          {/* Left: Variables */}
+          <div>
+            <div style={{ 
+              background: 'rgba(30, 35, 55, 0.4)',
+              border: '1px solid rgba(100, 200, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              height: 'fit-content',
+              position: 'sticky',
+              top: '2rem'
+            }}>
+              <h2 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 700, 
+                marginBottom: '1rem',
+                color: '#64c8ff'
+              }}>
+                State Variables
+              </h2>
+
+              {/* Current Action */}
+              {currentState.description && (
+                <div style={{
+                  background: 'rgba(157, 122, 255, 0.15)',
+                  border: '1px solid rgba(157, 122, 255, 0.3)',
+                  borderRadius: '8px',
+                  padding: '1rem',
+                  marginBottom: '1.5rem',
+                  fontSize: '0.9rem',
+                  lineHeight: '1.5'
+                }}>
+                  <div style={{ 
+                    color: '#9d7aff', 
+                    fontWeight: 600, 
+                    marginBottom: '0.5rem',
+                    fontSize: '0.85rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Current Action
+                  </div>
+                  {currentState.description}
+                </div>
+              )}
+
+              {/* Variables */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {Object.entries(currentState.variables || {}).map(([key, value]) => (
+                  <div key={key} className="var-card">
+                    <div style={{ 
+                      color: '#64c8ff', 
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      marginBottom: '0.25rem'
+                    }}>
+                      {key}
+                    </div>
+                    <div style={{ 
+                      color: '#b8c1d8',
+                      fontSize: '0.9rem',
+                      wordBreak: 'break-all'
+                    }}>
+                      {formatValue(value)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Code */}
+          <div>
+            <div style={{ 
+              background: 'rgba(20, 25, 45, 0.8)',
+              border: '1px solid rgba(100, 200, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              overflow: 'auto'
+            }}>
+              <h2 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 700, 
+                marginBottom: '1rem',
+                color: '#64c8ff'
+              }}>
+                Code Execution
+              </h2>
+              <div style={{ 
+                background: 'rgba(10, 14, 30, 0.6)',
+                borderRadius: '8px',
+                padding: '1rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.6',
+                overflow: 'auto'
+              }}>
+                {codeLines.map((line, idx) => (
+                  <div
+                    key={idx}
+                    className={`code-line ${idx + 1 === currentState.line ? 'code-line-active' : ''}`}
+                    style={{
+                      color: idx + 1 === currentState.line ? '#64c8ff' : '#8b92a8',
+                      fontWeight: idx + 1 === currentState.line ? 600 : 400,
+                      whiteSpace: 'pre'
+                    }}
+                  >
+                    <span style={{ 
+                      display: 'inline-block', 
+                      width: '2rem',
+                      color: 'rgba(139, 146, 168, 0.5)',
+                      userSelect: 'none'
+                    }}>
+                      {idx + 1}
+                    </span>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
